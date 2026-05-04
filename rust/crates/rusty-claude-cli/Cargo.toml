@@ -1,12 +1,12 @@
 [package]
-name = "rusty-claude-cli"
+name = "rusty-yuki-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [[bin]]
-name = "claw"
+name = "yuki"
 path = "src/main.rs"
 
 [dependencies]
