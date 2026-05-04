@@ -28,8 +28,6 @@
   </pre>
 </p>
 
----
-
 ## The Session Is a Pure Function
 
 Yuki is a **declarative**, **hermetic** Claude Code harness built on Nix. Your entire session — the tools Claude can invoke, the MCP servers it connects to, the system prompt it reasons from — is declared in Nix profiles and realized into a reproducible derivation **before Claude ever starts**.
@@ -40,8 +38,6 @@ profiles → evalModules → mkHarness → /nix/store/…-yuki
 
 **This is not a wrapper script.** It's a realized artifact — the same way NixVim produces a configured Neovim derivation, Yuki produces a configured Claude Code session derivation.
 
----
-
 ## Why Nix?
 
 | Without Nix | With Yuki |
@@ -51,8 +47,6 @@ profiles → evalModules → mkHarness → /nix/store/…-yuki
 | Implicit toolchain | Explicit packages in PATH |
 | Mutable dotfiles | Declarative profiles |
 | Unreproducible sessions | Content-addressed derivation |
-
----
 
 ## Quick Start
 
@@ -76,8 +70,6 @@ nix build .#review
 # Interactive from anywhere (after adding to PATH)
 nix run github:spirizeon/yuki#rust
 ```
-
----
 
 ## Three Ways to Use Yuki
 
@@ -122,8 +114,6 @@ cargo build --workspace
 ./target/debug/yuki
 ```
 
----
-
 ## What Yuki Declares
 
 ```nix
@@ -138,8 +128,6 @@ claudeCode = {
 };
 ```
 
----
-
 ## Design Values
 
 1. **Reproducibility over convenience** — if it can't be pinned, it shouldn't be in the harness
@@ -148,16 +136,12 @@ claudeCode = {
 4. **Build-time over runtime** — if it can be resolved before Claude starts, it should be
 5. **Hermetic by default** — the open network and the writable filesystem are opt-in
 
----
-
 ## Documentation
 
 - [SOUL.md](./SOUL.md) — Core philosophy (read this first)
 - [SKILL.md](./SKILL.md) — Module system and profile authoring
 - [USAGE.md](./USAGE.md) — CLI reference and usage
 - [rust/README.md](./rust/README.md) — Rust implementation details
-
----
 
 ## Ecosystem
 
