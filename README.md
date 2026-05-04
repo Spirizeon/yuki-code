@@ -1,176 +1,166 @@
-# Yuki
+# ❄️ Yuki
 
 <p align="center">
   <a href="https://github.com/spirizeon/yuki">spirizeon/yuki</a>
   ·
+  <a href="./SOUL.md">Philosophy</a>
+  ·
+  <a href="./SKILL.md">Skill</a>
+  ·
   <a href="./USAGE.md">Usage</a>
   ·
-  <a href="./rust/README.md">Rust workspace</a>
-  ·
-  <a href="./PARITY.md">Parity</a>
-  ·
-  <a href="./ROADMAP.md">Roadmap</a>
-  ·
-  <a href="https://discord.gg/5TUQKqFWd">UltraWorkers Discord</a>
+  <a href="https://discord.gg/5TUQKqFWd">Discord</a>
 </p>
 
 <p align="center">
-  <a href="https://star-history.com/#spirizeon/yuki&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=spirizeon/yuki&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=spirizeon/yuki&type=Date" />
-      <img alt="Star history for spirizeon/yuki" src="https://api.star-history.com/svg?repos=spirizeon/yuki&type=Date" width="600" />
-    </picture>
-  </a>
+  <pre>
+ .     .--. 
+.-.          .-        .'|     |__| 
+ \ \        / /      .'  |     .--. 
+  \ \      / /      <    |     |  | 
+   \ \    / /_    _  |   | ____|  | 
+    \ \  / /| '  / | |   | \ .'|  | 
+     \ `  /.' | .' | |   |/  . |  | 
+      \  / /  | /  | |    /\  \|__| 
+      / / |   `'.  | |   |  \  \    
+  |`-' /  '   .'|  '/'    \  \  \   
+   '..'    `-'  `--''------'  '---'
+  </pre>
 </p>
 
-<p align="center">
-  .     .--. 
- .-.          .-        .'|     |__| 
-  \ \        / /      .'  |     .--. 
-   \ \      / /      <    |     |  | 
-    \ \    / /_    _  |   | ____|  | 
-     \ \  / /| '  / | |   | \ .'|  | 
-      \ `  /.' | .' | |   |/  . |  | 
-       \  / /  | /  | |    /\  \|__| 
-       / / |   `'.  | |   |  \  \    
-   |`-' /  '   .'|  '/'    \  \  \   
-    '..'    `-'  `--''------'  '---' 
-</p>
+---
 
-Yuki is a high-performance Rust CLI agent harness that connects to Claude (Anthropic), OpenAI, xAI, and other model providers. It provides an interactive REPL, session persistence, tool execution, MCP server integration, and a plugin system.
+## The Session Is a Pure Function
 
-> [!IMPORTANT]
-> Start with [`USAGE.md`](./USAGE.md) for build, auth, CLI, session, and parity-harness workflows. Make `yuki doctor` your first health check after building, use [`rust/README.md`](./rust/README.md) for crate-level details, read [`PARITY.md`](./PARITY.md) for the current Rust-port checkpoint, and see [`docs/container.md`](./docs/container.md) for the container-first workflow.
+Yuki is a **declarative**, **hermetic** Claude Code harness built on Nix. Your entire session — the tools Claude can invoke, the MCP servers it connects to, the system prompt it reasons from — is declared in Nix profiles and realized into a reproducible derivation **before Claude ever starts**.
 
-## Current repository shape
+```
+profiles → evalModules → mkHarness → /nix/store/…-yuki
+```
 
-- **`rust/`** — canonical Rust workspace and the `yuki` CLI binary
-- **`USAGE.md`** — task-oriented usage guide for the current product surface
-- **`PARITY.md`** — Rust-port parity status and migration notes
-- **`ROADMAP.md`** — active roadmap and cleanup backlog
-- **`PHILOSOPHY.md`** — project intent and system-design framing
-- **`src/` + `tests/`** — companion Python/reference workspace and audit helpers; not the primary runtime surface
+**This is not a wrapper script.** It's a realized artifact — the same way NixVim produces a configured Neovim derivation, Yuki produces a configured Claude Code session derivation.
 
-## Quick start
+---
+
+## Why Nix?
+
+| Without Nix | With Yuki |
+|------------|----------|
+| "works on my machine" | Same environment everywhere |
+| Runtime plugin downloads | Build-time resolve |
+| Implicit toolchain | Explicit packages in PATH |
+| Mutable dotfiles | Declarative profiles |
+| Unreproducible sessions | Content-addressed derivation |
+
+---
+
+## Quick Start
 
 ```bash
-# 1. Clone and build
+# Clone and enter the flake
 git clone https://github.com/spirizeon/yuki
-cd yuki/rust
+cd yuki
+
+# Build a harness profile
+nix build .#default
+# or
+nix build .#rust
+# or  
+nix build .#review
+
+# Run the hermetic session
+./result/bin/yuki
+```
+
+```bash
+# Interactive from anywhere (after adding to PATH)
+nix run github:spirizeon/yuki#rust
+```
+
+---
+
+## Three Ways to Use Yuki
+
+### 1. Flake Outputs (Recommended)
+
+```bash
+nix run .#default      # Base tools + REPL
+nix run .#rust        # + Rust toolchain
+nix run .#review      # Read-only, sandboxed
+```
+
+### 2. Nix Module Composition
+
+Import profiles and compose your own:
+
+```nix
+# my-project/flake.nix
+{
+  inputs.yuki.url = "github:spirizeon/yuki";
+  
+  outputs = { self, yuki, ... }:
+  {
+    packages.default = yuki.lib.mkHarness {
+      modules = [
+        yuki.profiles.rust
+        {
+          claudeCode.systemPrompt = lib.mkAfter ''
+            This project uses diesel for database access.
+          '';
+        }
+      ];
+    };
+  };
+}
+```
+
+### 3. Local Development
+
+```bash
+cd rust
 cargo build --workspace
-
-# 2. Set your API key (Anthropic API key — not a Claude subscription)
-export ANTHROPIC_API_KEY="sk-ant-..."
-
-# 3. Verify everything is wired correctly
-./target/debug/yuki doctor
-
-# 4. Run a prompt
-./target/debug/yuki prompt "say hello"
+./target/debug/yuki
 ```
 
-> [!NOTE]
-> **Windows (PowerShell):** use `.\target\debug\yuki.exe` or run `cargo run -- prompt "say hello"` to skip the path lookup.
+---
 
-### Windows setup
+## What Yuki Declares
 
-**PowerShell is a supported Windows path.** Use whichever shell works for you. The common onboarding issues on Windows are:
-
-1. **Install Rust first** — download from <https://rustup.rs/> and run the installer. Close and reopen your terminal when it finishes.
-2. **Verify Rust is on PATH:**
-   ```powershell
-   cargo --version
-   ```
-   If this fails, reopen your terminal or run the PATH setup from the Rust installer output, then retry.
-3. **Clone and build** (works in PowerShell, Git Bash, or WSL):
-   ```powershell
-   git clone https://github.com/spirizeon/yuki
-   cd yuki/rust
-   cargo build --workspace
-   ```
-4. **Run** (PowerShell — note `.exe` and backslash):
-   ```powershell
-   $env:ANTHROPIC_API_KEY = "sk-ant-..."
-   .\target\debug\yuki.exe prompt "say hello"
-   ```
-
-**Git Bash / WSL** are optional alternatives, not requirements. If you prefer bash-style paths (`/c/Users/you/...` instead of `C:\Users\you\...`), Git Bash (ships with Git for Windows) works well.
-
-## Post-build: locate the binary and verify
-
-After running `cargo build --workspace`, the `yuki` binary is built but **not** automatically installed to your system.
-
-### Binary location
-
-After `cargo build --workspace` in `yuki/rust/`:
-
-- **macOS/Linux:** `rust/target/debug/yuki`
-- **Windows:** `rust/target/debug/yuki.exe`
-
-- **Release build:** `rust/target/release/yuki` or `yuki.exe`
-
-### Verify the build succeeded
-
-```bash
-# macOS/Linux (debug build)
-./rust/target/debug/yuki --help
-./rust/target/debug/yuki doctor
-
-# Windows PowerShell (debug build)
-.\rust\target\debug\yuki.exe --help
-.\rust\target\debug\yuki.exe doctor
+```nix
+claudeCode = {
+  model         # "claude-sonnet-4-6" — model to use
+  tools.allowed # ["bash" "read" "write" ...] — permitted tools
+  toolchain.packages = [ pkgs.rustc pkgs.clippy ];  # hermetic PATH
+  environment = { RUST_BACKTRACE = "1"; };        # env vars
+  systemPrompt = lib.mkAfter '' ... '';               # composable prompt
+  mcp.servers = { };                              # MCP configurations
+  sandbox = { enable = true; allowNetwork = false; };  # isolation
+};
 ```
 
-### Optional: Add to PATH
+---
 
-**Option 1: Symlink (macOS/Linux)**
-```bash
-ln -s $(pwd)/rust/target/debug/yuki /usr/local/bin/yuki
-```
+## Design Values
 
-**Option 2: Use `cargo install`**
-```bash
-cd rust
-cargo install --path . --force
-```
+1. **Reproducibility over convenience** — if it can't be pinned, it shouldn't be in the harness
+2. **Explicit over implicit** — what Claude can do is declared, not inferred
+3. **Composition over inheritance** — profiles merge, they don't override each other by magic
+4. **Build-time over runtime** — if it can be resolved before Claude starts, it should be
+5. **Hermetic by default** — the open network and the writable filesystem are opt-in
 
-**Option 3: Update shell profile**
+---
 
-Add to `~/.bashrc` or `~/.zshrc`:
-```bash
-export PATH="$(pwd)/rust/target/debug:$PATH"
-```
+## Documentation
 
-> [!NOTE]
-> **Auth:** Yuki requires an **API key** (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, etc.) — Claude subscription login is not a supported auth path.
+- [SOUL.md](./SOUL.md) — Core philosophy (read this first)
+- [SKILL.md](./SKILL.md) — Module system and profile authoring
+- [USAGE.md](./USAGE.md) — CLI reference and usage
+- [rust/README.md](./rust/README.md) — Rust implementation details
 
-Run the workspace test suite:
-```bash
-cd rust
-cargo test --workspace
-```
-
-## Documentation map
-
-- [`USAGE.md`](./USAGE.md) — quick commands, auth, sessions, config, parity harness
-- [`rust/README.md`](./rust/README.md) — crate map, CLI surface, features, workspace layout
-- [`PARITY.md`](./PARITY.md) — parity status for the Rust port
-- [`rust/MOCK_PARITY_HARNESS.md`](./rust/MOCK_PARITY_HARNESS.md) — deterministic mock-service harness details
-- [`ROADMAP.md`](./ROADMAP.md) — active roadmap and open cleanup work
-- [`PHILOSOPHY.md`](./PHILOSOPHY.md) — why the project exists and how it is operated
+---
 
 ## Ecosystem
 
-Yuki is built in the open alongside the broader UltraWorkers toolchain:
-
-- [clawhip](https://github.com/Yeachan-Heo/clawhip)
-- [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)
-- [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode)
-- [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex)
+- [clawhip](https://github.com/Yeachan-Heo/clawhip) — Event routing
+- [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) — Multi-agent coordination
 - [UltraWorkers Discord](https://discord.gg/5TUQKqFWd)
-
-## Ownership / affiliation disclaimer
-
-- This repository does **not** claim ownership of the original Claude Code source material.
-- This repository is **not affiliated with, endorsed by, or maintained by Anthropic**.

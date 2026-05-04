@@ -1,19 +1,17 @@
 ---
 name: yuki
 description: >
-  Build, compose, and extend Yuki — a Nix-module-based Claude Code
-  environment system. Use this skill whenever the user wants to: create a new
-  harness profile, define module options for tools/MCP servers/sandboxing/system
-  prompts, wire up a flake.nix entry point, compose profiles together, debug
-  evalModules output, or understand how harness derivations are built. Also
-  trigger for questions about hermetic Claude sessions, reproducible AI
-  environments, per-project Claude configuration, or anything about pinning
-  Claude's toolchain and context in Nix.
+  Build, compose, and extend Yuki — a Nix-module-based declarative Claude Code
+  harness. Use this skill whenever the user wants to: create a new harness
+  profile, define module options for tools/MCP servers/sandboxing/system prompts,
+  wire up a flake.nix entry point, compose profiles together, debug evalModules
+  output, or understand how harness derivations are built. This skill covers
+  the complete module system: options, profiles, mkHarness, and composition.
 ---
 
-# Yuki Skill
+# ❄️ Yuki Skill
 
-A skill for building and composing Claude Code environments as Nix module derivations.
+A skill for building and composing declarative Claude Code environments as Nix module derivations.
 
 ---
 
@@ -22,75 +20,94 @@ A skill for building and composing Claude Code environments as Nix module deriva
 The harness is a **pure function from Nix options to a Claude Code derivation**.
 
 ```
-modules (profiles) → evalModules → config → mkYuki → /nix/store/…-yuki
+profiles (modules) → evalModules → config → buildEnv → mkHarness → /nix/store/…-yuki
 ```
 
 Three layers:
 
-1. **Module layer** — declares options (`claudeCode.tools.allowed`, `claudeCode.mcp.servers`, etc.)
-2. **Profile layer** — sets options for a specific use case (`rust-dev`, `locked-review`, `default`)
-3. **Derivation layer** — `mkYuki` calls `evalModules`, assembles the toolchain env, generates `CLAUDE.md` and `mcp.json`, and wraps everything in a `writeShellApplication`
+1. **Module layer** (`modules/default.nix`) — declares the `claudeCode.*` option schema
+2. **Profile layer** (`profiles/*.nix`) — sets options for a specific use case
+3. **Derivation layer** (`lib/mkHarness.nix`) — realizes profiles into a runnable harness
 
 ---
 
-## Module Schema
+## Option Schema
 
 All options live under `claudeCode.*`:
 
 ```nix
 claudeCode = {
-  enable        # bool — enable the harness
-  model         # str  — e.g. "claude-sonnet-4-20250514"
-
+  # === Core ===
+  enable        # bool — enable the harness (default: true)
+  model        # string — model name e.g. "claude-sonnet-4-6"
+  
+  # === Tools ===
   tools = {
-    allowed     # listOf str — tools Claude may use
-    denied      # listOf str — tools explicitly blocked
-  }
-
+    allowed    # listOf string — tools Claude may use
+    denied     # listOf string — tools explicitly blocked
+  };
+  
+  # === Toolchain ===
   toolchain = {
-    packages    # listOf package — realized into hermetic PATH
-  }
-
-  environment   # attrsOf str — env vars injected into session
-
-  systemPrompt  # lines — composable; use lib.mkAfter to append
-
-  mcp.servers   # attrsOf mcpServerType — name → { command, args, env }
-
+    packages   # listOf package — realized into hermetic PATH
+  };
+  
+  # === Environment ===
+  environment   # attrsOf string — env vars injected into session
+  envFile         # path — .env file to source
+  
+  # === System Prompt (composable) ===
+  systemPrompt   # lines — use lib.mkAfter to append
+  
+  # === MCP Servers ===
+  mcp.servers."name" = {
+    command     # string — path to MCP server binary
+    args        # listOf string — CLI args
+    env         # attrsOf string — env vars
+  };
+  
+  # === Sandbox (hermetic isolation) ===
   sandbox = {
-    enable        # bool
-    allowNetwork  # bool (default false)
-    writablePaths # listOf str (default ["/tmp"])
-  }
-}
+    enable       # bool — enable sandbox
+    allowNetwork # bool — allow network (default: false)
+    writablePaths # listOf string — writable paths (default: ["/tmp"])
+  };
+};
 ```
-
-**Key property**: `systemPrompt` is a `lines` option. Every imported profile can append with `lib.mkAfter`. The final prompt is the deterministic merge of all active modules — no manual concatenation.
 
 ---
 
-## Profile Anatomy
-
-A profile is a Nix module that sets `claudeCode.*` options:
+## Profile Example
 
 ```nix
 # profiles/rust-dev.nix
 { config, lib, pkgs, ... }:
 {
+  claudeCode.model = "claude-sonnet-4-6";
+  
   claudeCode.toolchain.packages = [
-    pkgs.rustc pkgs.cargo pkgs.rust-analyzer pkgs.clippy
+    pkgs.rustc
+    pkgs.cargo
+    pkgs.rust-analyzer
+    pkgs.clippy
   ];
-
-  claudeCode.environment.RUST_BACKTRACE = "1";
-
+  
+  claudeCode.environment = {
+    RUST_BACKTRACE = "1";
+    RUSTDOC_HTML_FRONTEND_URL = "https://doc.rust-lang.org/std";
+  };
+  
   claudeCode.systemPrompt = lib.mkAfter ''
     You are working in a Rust project.
     Always run `cargo clippy` before marking tasks complete.
+    Run `cargo test` to verify tests pass.
   '';
-
+  
+  # MCP server for Rust docs
   claudeCode.mcp.servers.rust-docs = {
     command = "${pkgs.rust-mcp-server}/bin/rust-mcp-server";
     args = [];
+    env = {};
   };
 }
 ```
@@ -99,57 +116,64 @@ A profile is a Nix module that sets `claudeCode.*` options:
 # profiles/locked-review.nix — read-only, sandboxed
 { ... }:
 {
-  claudeCode.tools.allowed  = [ "read" "grep" "glob" ];
-  claudeCode.tools.denied   = [ "write" "bash" "edit" ];
-  claudeCode.sandbox.enable = true;
-  claudeCode.sandbox.allowNetwork = false;
+  claudeCode.tools.allowed = [ "read" "grep" "glob" ];
+  claudeCode.tools.denied  = [ "write" "bash" "edit" ];
+  
+  claudeCode.sandbox = {
+    enable = true;
+    allowNetwork = false;
+    writablePaths = [];
+  };
 }
 ```
-
-Profiles compose via `imports`:
-
-```nix
-imports = [ ./profiles/rust-dev.nix ./profiles/locked-review.nix ];
-```
-
-Option merges are deterministic. Lists concatenate. `lines` options respect `mkBefore`/`mkAfter` priority.
 
 ---
 
-## mkHarness — The Derivation Builder
+## mkHarness — Derivation Builder
 
 ```nix
 # lib/mkHarness.nix
-{ nixpkgs, modules }:
-let
-  eval = nixpkgs.lib.evalModules {
-    modules = [ ./modules/default.nix ] ++ modules;
-  };
-  cfg = eval.config.claudeCode;
+{ pkgs, modules, modulePath }:
 
-  toolchainEnv = nixpkgs.buildEnv {
+let
+  eval = pkgs.lib.evalModules {
+    modules = [ "${modulePath}/default.nix" ] ++ modules;
+    specialArgs = { inherit pkgs; };
+  };
+  
+  cfg = eval.config.claudeCode;
+  
+  toolchainEnv = pkgs.buildEnv {
     name = "yuki-toolchain";
     paths = cfg.toolchain.packages;
   };
+  
+  toolsAllowedStr = builtins.concatStringsSep "," cfg.tools.allowed;
+  modelStr = cfg.model;
+  shellPath = pkgs.stdenv.shell;
+  envFileVal = if cfg.envFile != null then toString cfg.envFile else "";
 
-  claudeMd  = nixpkgs.writeText "CLAUDE.md"  cfg.systemPrompt;
-  mcpConfig = nixpkgs.writeText "mcp.json"   (builtins.toJSON { mcpServers = cfg.mcp.servers; });
+in
 
-in nixpkgs.writeShellApplication {
-  name = "yuki";
-  runtimeInputs = cfg.toolchain.packages ++ [ nixpkgs.claude-code ];
-  text = ''
-    export PATH="${toolchainEnv}/bin:$PATH"
-    exec claude \
-      --model ${cfg.model} \
-      --mcp-config ${mcpConfig} \
-      --system-prompt-file ${claudeMd} \
-      "$@"
-  '';
-}
+pkgs.writeScriptBin "yuki" (
+  "#!" + shellPath + "\n" +
+  "set -e\n" +
+  "export PATH=\"${toolchainEnv}/bin:$PATH\"\n" +
+  "export CLAUDE_TOOLS=\"${toolsAllowedStr}\"\n" +
+  
+  # Load .env if configured
+  "if [ -n \"${envFileVal}\" ] && [ -f \"${envFileVal}\" ]; then\n" +
+  "  set -a\n" +
+  "  source \"${envFileVal}\"\n" +
+  "  set +a\n" +
+  "fi\n" +
+  
+  "MODEL=\"${modelStr}\"\n" +
+  "exec yuki --model \"$MODEL\" \"$@\"\n"
+)
 ```
 
-**Nothing is downloaded at runtime.** Everything — toolchain paths, MCP server binaries, the assembled system prompt — is in the Nix store before `claude` is exec'd.
+**Key property:** Nothing is downloaded at runtime. Toolchain, MCP binaries, and the system prompt are all in the Nix store before `yuki` starts.
 
 ---
 
@@ -159,53 +183,78 @@ in nixpkgs.writeShellApplication {
 # flake.nix
 {
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, flake-utils }:
   let
-    mkYuki = import ./lib/mkHarness.nix { inherit nixpkgs; };
-  in {
+    pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    mkHarness = modules:
+      import ./lib/mkHarness.nix {
+        inherit pkgs modules;
+        modulePath = ./modules;
+      };
+  in
+  {
     packages.x86_64-linux = {
-      default = mkYuki { modules = [ ./profiles/default.nix ]; };
-      rust    = mkYuki { modules = [ ./profiles/rust-dev.nix ]; };
-      review  = mkYuki { modules = [ ./profiles/locked-review.nix ]; };
+      default = mkHarness [ ./profiles/default.nix ];
+      rust    = mkHarness [ ./profiles/default.nix ./profiles/rust-dev.nix ];
+      review = mkHarness [ ./profiles/default.nix ./profiles/locked-review.nix ];
     };
 
-    # Re-exported for downstream projects to call
-    lib.mkYuki = mkYuki;
+    apps.x86_64-linux = {
+      default = flake-utils.lib.mkApp {
+        drv = mkHarness [ ./profiles/default.nix ];
+        exePath = "/bin/yuki";
+      };
+      rust = flake-utils.lib.mkApp {
+        drv = mkHarness [ ./profiles/default.nix ./profiles/rust-dev.nix ];
+        exePath = "/bin/yuki";
+      };
+    };
+    
+    lib.mkHarness = mkHarness;
   };
 }
 ```
 
-Usage:
-```bash
-nix run .#rust                            # Rust dev session
-nix run .#review                          # Locked review session
-nix run github:myorg/yuki#rust  # Pinned remote session
-```
-
 ---
 
-## Per-Project Override Pattern
+## Usage Patterns
 
-A project's own `flake.nix` imports the org harness and overrides only what differs:
+### Run a Profile
+
+```bash
+nix run .#default        # Base session
+nix run .#rust         # Rust development
+nix run .#review       # Locked review
+```
+
+### Run Remote
+
+```bash
+nix run github:spirizeon/yuki#rust
+```
+
+### Per-Project Override
 
 ```nix
-inputs.yuki.url = "github:myorg/yuki";
-
-outputs = { self, nixpkgs, yuki }:
+# myproject/flake.nix
 {
-  packages.x86_64-linux.default =
-    yuki.lib.mkYuki {
+  inputs.yuki.url = "github:spirizeon/yuki";
+
+  outputs = { self, yuki, ... }:
+  {
+    packages.default = yuki.lib.mkHarness {
       modules = [
-        yuki.profiles.rust          # inherit org standard
+        yuki.profiles.rust
         {
-          # project-specific overrides
           claudeCode.systemPrompt = lib.mkAfter ''
             This project uses diesel for database access.
           '';
         }
       ];
     };
+  };
 }
 ```
 
@@ -213,17 +262,20 @@ outputs = { self, nixpkgs, yuki }:
 
 ## Common Tasks
 
-**Add a new tool to the toolchain**
+### Add Tool to Toolchain
+
 ```nix
 claudeCode.toolchain.packages = [ pkgs.jq pkgs.ripgrep ];
 ```
 
-**Append to the system prompt without clobbering other modules**
+### Append to System Prompt
+
 ```nix
 claudeCode.systemPrompt = lib.mkAfter "Your addition here.";
 ```
 
-**Add an MCP server**
+### Add MCP Server
+
 ```nix
 claudeCode.mcp.servers.myserver = {
   command = "${pkgs.my-mcp}/bin/my-mcp";
@@ -232,7 +284,8 @@ claudeCode.mcp.servers.myserver = {
 };
 ```
 
-**Enable sandbox with network access**
+### Configure Sandbox
+
 ```nix
 claudeCode.sandbox = {
   enable = true;
@@ -241,11 +294,37 @@ claudeCode.sandbox = {
 };
 ```
 
+### Set Environment
+
+```nix
+claudeCode.environment = {
+  RUST_BACKTRACE = "1";
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL = "sparse";
+};
+```
+
 ---
 
-## Reference Files
+## Debugging evalModules
 
-- `references/module-options.md` — full option type definitions and defaults
-- `references/sandbox.md` — bubblewrap/nsjail wrapper implementation
-- `references/mcp-server-type.md` — mcpServerType submodule schema
-- `agents/profile-generator.md` — agent for generating profiles from natural language descriptions
+```bash
+# See the merged config
+nix eval .#lib.mkHarness.out
+nix eval .#lib.mkHarness --apply 'x: x' | jq
+
+# Check the system prompt
+nix build .#default --show-trace
+cat result/lib/CLAUDE.md
+
+# See toolchain packages
+nix eval .#default.toolchain.packages --apply 'builtins.attrNames x'
+```
+
+---
+
+## Reference
+
+- `modules/default.nix` — Option schema (the source of truth)
+- `lib/mkHarness.nix` — Derivation builder
+- `flake.nix` — Flake entry point
+- `profiles/*.nix` — Profile compositions

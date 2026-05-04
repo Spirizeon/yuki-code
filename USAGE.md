@@ -1,4 +1,6 @@
-# Yuki Usage
+# ❄️ Yuki Usage
+
+> This guide covers the CLI reference. For the Nix harness system, see [SOUL.md](./SOUL.md) and [SKILL.md](./SKILL.md).
 
 This guide covers the current Rust workspace under `rust/` and the `yuki` CLI binary. If you are brand new, make the doctor health check your first run: start `yuki`, then run `/doctor`.
 

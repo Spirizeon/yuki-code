@@ -1,52 +1,95 @@
-# SOUL.md — Yuki Harness
+# SOUL.md — ❄️ Yuki Harness
 
-> Yuki is a [Claude Code](https://claude.ai/code) distribution built around [Nix](https://nixos.org) modules. Your entire session — the tools Claude can invoke, the MCP servers it connects to, the system prompt it reasons from — is declared in Nix and realized into a hermetic derivation before Claude ever starts. Distributed as a flake, composed from profiles, reproducible by default.
+> Yuki is a declarative, hermetic Claude Code harness built around [Nix](https://nixos.org) modules. Your entire session — the tools, MCP servers, system prompt — is declared in Nix and realized into a reproducible derivation before Claude ever starts. Distributed as a flake, composed from profiles, reproducible by default.
 
 ---
 
-## Core Philosophy
+## The Session Is a Pure Function
 
-**The session is a pure function.**
+Given the same Nix module configuration, you always get the **same Claude environment**.
 
-Given the same Nix module configuration, you always get the same Claude environment. No hidden state. No "works on my machine." No plugins downloaded at runtime. The harness is a derivation — it lives in the Nix store, it is content-addressed, and it is reproducible by anyone with your `flake.lock`.
+- No hidden state
+- No "works on my machine"
+- No plugins downloaded at runtime
 
-This is not a wrapper script. It is not a dotfile manager. It is a **realized artifact** — the same way NixVim produces a configured Neovim derivation, Yuki produces a configured Claude Code session derivation.
+The harness is a **derivation** — it lives in the Nix store, it is content-addressed, and it is reproducible by anyone with your `flake.lock`.
 
 ---
 
 ## What This Means in Practice
 
-**Configuration is declaration, not instruction.**
-You do not tell the harness what to do at runtime. You declare what the session *is* — its tools, its context, its boundaries — and the harness realizes that declaration into a binary before Claude ever starts.
+### Configuration is Declaration, Not Instruction
 
-**Composition over configuration.**
-Profiles are modules. Modules compose. A `rust-dev` profile and a `locked-review` profile can be imported together, and their options merge deterministically — the same way NixOS modules compose `/etc`. There is no plugin manager negotiating at startup.
+You do not tell the harness what to do at runtime. You declare what the session *is*:
 
-**Build-time is the right time.**
-The system prompt, the toolchain PATH, the MCP server configs — these are all resolved at `nix build`, not at session start. Claude doesn't discover its environment; it *is* its environment.
+```nix
+claudeCode = {
+  model = "claude-sonnet-4-6";
+  tools.allowed = [ "bash" "read" "write" "edit" "grep" "glob" ];
+  toolchain.packages = [ pkgs.rustc pkgs.cargo pkgs.clippy ];
+  sandbox.enable = true;
+  sandbox.allowNetwork = false;
+};
+```
 
-**Hermetic by default, escapable by choice.**
-The sandbox is a module option, not a flag you pass. `sandbox.enable = true` in a profile means that profile's derivation is always sandboxed, for everyone, everywhere it runs. Escape hatches exist but must be declared explicitly.
+The harness realizes that declaration into a binary before Claude ever starts.
 
-**Profiles are the unit of sharing.**
+### Composition Over Configuration
+
+Profiles are Nix modules. Modules compose. A `rust-dev` profile and a `locked-review` profile can be imported together, and their options merge deterministically — the same way NixOS modules compose.
+
+```nix
+imports = [ ./profiles/rust-dev.nix ./profiles/locked-review.nix ];
+```
+
+There is no plugin manager negotiating at startup.
+
+### Build-Time Is the Right Time
+
+The system prompt, the toolchain PATH, the MCP server configs — these are all resolved at `nix build`, not at session start.
+
+Claude doesn't discover its environment. It *is* its environment.
+
+### Hermetic by Default, Escapable by Choice
+
+The sandbox is a module option, not a flag you pass:
+
+```nix
+claudeCode.sandbox = {
+  enable = true;
+  allowNetwork = false;  # off by default
+  writablePaths = ["/tmp"];  # explicit scope
+};
+```
+
+`sandbox.enable = true` in a profile means that profile's derivation is always sandboxed, for everyone, everywhere it runs. Escape hatches exist but must be declared explicitly.
+
+### Profiles Are the Unit of Sharing
+
 Teams publish profiles as flake outputs. Projects import and override. The org's standard backend profile — its tools, prompt conventions, MCP servers — travels with the flake, pinned by the lock file.
+
+```bash
+nix run .#rust           # Rust dev session
+nix run .#review        # Locked review session
+nix run github:myorg/yuki#rust   # Pinned remote session
+```
 
 ---
 
 ## What Yuki Is Not
 
-- Not a shell alias around `claude`
-- Not a dotfile in `~/.config/claude`
-- Not a runtime plugin manager
-- Not a prompt templating tool with env var substitution
-- Not a wrapper that downloads things when you first run it
+- ❌ Not a shell alias around `claude`
+- ❌ Not a dotfile in `~/.config/claude`
+- ❌ Not a runtime plugin manager
+- ❌ Not a prompt templating tool with env var substitution
+- ❌ Not a wrapper that downloads things when you first run it
 
 ---
 
 ## The Nix Analogy, Precisely
 
 | NixVim | Yuki |
-|---|---|
+|--------|-----|
 | Wraps Neovim | Wraps Claude Code |
 | Plugins as Nix packages | MCP servers as Nix packages |
 | `init.lua` generated from modules | System prompt assembled from modules |
@@ -63,3 +106,10 @@ Teams publish profiles as flake outputs. Projects import and override. The org's
 3. **Composition over inheritance** — profiles merge, they don't override each other by magic
 4. **Build-time over runtime** — if it can be resolved before Claude starts, it should be
 5. **Hermetic by default** — the open network and the writable filesystem are opt-in
+
+---
+
+## Related
+
+- [SKILL.md](./SKILL.md) — Module system for building harness configurations
+- [USAGE.md](./USAGE.md) — CLI reference
