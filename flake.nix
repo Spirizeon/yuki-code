@@ -8,41 +8,35 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
       mkHarness = modules:
         import ./lib/mkHarness.nix {
-          inherit nixpkgs;
-          inherit modules;
+          inherit pkgs modules;
+          modulePath = ./modules;
         };
     in
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        packages = {
-          default = mkHarness [ ./profiles/default.nix ];
-          rust = mkHarness [ ./profiles/default.nix ./profiles/rust-dev.nix ];
-          review = mkHarness [ ./profiles/default.nix ./profiles/locked-review.nix ];
-        };
+    {
+      packages.x86_64-linux = {
+        default = mkHarness [ ./profiles/default.nix ];
+        rust = mkHarness [ ./profiles/default.nix ./profiles/rust-dev.nix ];
+        review = mkHarness [ ./profiles/default.nix ./profiles/locked-review.nix ];
+      };
 
-        lib = {
-          mkHarness = mkHarness;
-        };
+      lib.mkHarness = mkHarness;
 
-        apps = {
-          default = flake-utils.lib.mkApp {
-            drv = mkHarness [ ./profiles/default.nix ];
-            exePath = "/bin/yuki";
-          };
-          rust = flake-utils.lib.mkApp {
-            drv = mkHarness [ ./profiles/default.nix ./profiles/rust-dev.nix ];
-            exePath = "/bin/yuki";
-          };
-          review = flake-utils.lib.mkApp {
-            drv = mkHarness [ ./profiles/default.nix ./profiles/locked-review.nix ];
-            exePath = "/bin/yuki";
-          };
+      apps.x86_64-linux = {
+        default = flake-utils.lib.mkApp {
+          drv = mkHarness [ ./profiles/default.nix ];
+          exePath = "/bin/yuki";
         };
-      }
-    );
+        rust = flake-utils.lib.mkApp {
+          drv = mkHarness [ ./profiles/default.nix ./profiles/rust-dev.nix ];
+          exePath = "/bin/yuki";
+        };
+        review = flake-utils.lib.mkApp {
+          drv = mkHarness [ ./profiles/default.nix ./profiles/locked-review.nix ];
+          exePath = "/bin/yuki";
+        };
+      };
+    };
 }

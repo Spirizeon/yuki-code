@@ -1,4 +1,4 @@
-{ ... }:
+{ config, lib, ... }:
 {
   claudeCode.tools.allowed = [ "read" "grep" "glob" "websearch" "webfetch" ];
   claudeCode.tools.denied = [ "write" "edit" "bash" "execute" ];
