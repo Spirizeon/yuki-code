@@ -1,4 +1,4 @@
-# Claw Code Philosophy
+# Yuki Philosophy
 
 ## Stop Staring at the Files
 
@@ -6,38 +6,29 @@ If you only look at the generated files in this repository, you are looking at t
 
 The Python rewrite was a byproduct. The Rust rewrite was also a byproduct. The real thing worth studying is the **system that produced them**: a clawhip-based coordination loop where humans give direction and autonomous claws execute the work.
 
-Claw Code is not just a codebase. It is a public demonstration of what happens when:
+## The Nix Foundation
 
-- a human provides clear direction,
-- multiple coding agents coordinate in parallel,
-- notification routing is pushed out of the agent context window,
-- planning, execution, review, and retry loops are automated,
-- and the human does **not** sit in a terminal micromanaging every step.
+Yuki is built around **Nix modules** — not shell scripts, not dotfile managers, not runtime plugin loaders. The entire Claude environment is declared in Nix and realized into a hermetic derivation **before Claude ever starts**.
 
-## The Human Interface Is Discord
+This means:
 
-The important interface here is not tmux, Vim, SSH, or a terminal multiplexer.
+- **The session is a pure function** — given the same Nix module configuration, you always get the same Yuki environment. No hidden state. No "works on my machine." No plugins downloaded at runtime.
+- **Hermetic by default** — the toolchain, MCP servers, system prompt, and sandbox settings all live in the Nix store. It's content-addressed and reproducible by anyone with your `flake.lock`.
+- **Build-time is the right time** — the system prompt, toolchain PATH, MCP server configs — these are resolved at `nix build`, not at session start. Claude doesn't discover its environment; it *is* its environment.
+- **Explicit over implicit** — what Claude can do is declared, not inferred. Every tool, every MCP server, every sandbox boundary is a Nix option.
 
-The real human interface is a Discord channel.
+### The Three-Part System
 
-A person can type a sentence from a phone, walk away, sleep, or do something else. The claws read the directive, break it into tasks, assign roles, write code, run tests, argue over failures, recover, and push when the work passes.
+#### 1. Nix Profiles
 
-That is the philosophy: **humans set direction; claws perform the labor.**
+Profiles are Nix modules that declare what a session *is* — its tools, its context, its boundaries. A `rust-dev` profile and a `locked-review` profile can be imported together, and their options merge deterministically. There is no plugin manager negotiating at startup.
 
-## The Three-Part System
+**Composition over configuration.** Profiles compose via Nix imports:
+```nix
+imports = [ ./profiles/rust-dev.nix ./profiles/locked-review.nix ];
+```
 
-### 1. OmX (`oh-my-codex`)
-[oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) provides the workflow layer.
-
-It turns short directives into structured execution:
-- planning keywords
-- execution modes
-- persistent verification loops
-- parallel multi-agent workflows
-
-This is the layer that converts a sentence into a repeatable work protocol.
-
-### 2. clawhip
+#### 2.clawhip
 [clawhip](https://github.com/Yeachan-Heo/clawhip) is the event and notification router.
 
 It watches:
@@ -47,41 +38,44 @@ It watches:
 - agent lifecycle events
 - channel delivery
 
-Its job is to keep monitoring and delivery **outside** the coding agent's context window so the agents can stay focused on implementation instead of status formatting and notification routing.
+Its job is to keep monitoring and delivery **outside** the coding agent's context window.
 
-### 3. OmO (`oh-my-openagent`)
+#### 3. OmO (`oh-my-openagent`)
 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) handles multi-agent coordination.
 
-This is where planning, handoffs, disagreement resolution, and verification loops happen across agents.
+When Architect, Executor, and Reviewer disagree, OmO provides the structure for that loop to converge.
 
-When Architect, Executor, and Reviewer disagree, OmO provides the structure for that loop to converge instead of collapse.
+## The Human Interface Is Discord
 
-## The Real Bottleneck Changed
+The important interface is not tmux, Vim, SSH, or a terminal multiplexer.
 
-The bottleneck is no longer typing speed.
+The real human interface is a Discord channel.
 
-When agent systems can rebuild a codebase in hours, the scarce resource becomes:
-- architectural clarity
-- task decomposition
-- judgment
-- taste
-- conviction about what is worth building
-- knowing which parts can be parallelized and which parts must stay constrained
+A person can type a sentence from a phone, walk away, sleep, or do something else. The claws read the directive, break it into tasks, assign roles, write code, run tests, argue over failures, recover, and push when the work passes.
 
-A fast agent team does not remove the need for thinking. It makes clear thinking even more valuable.
+## Hermetic by Default, Escapable by Choice
 
-## What Claw Code Demonstrates
+The sandbox is a module option, not a flag you pass:
 
-Claw Code demonstrates that a repository can be:
+```nix
+claudeCode.sandbox = {
+  enable = true;
+  allowNetwork = false;  # network is off by default
+  writablePaths = ["/tmp"];  # write scope is explicit
+};
+```
 
-- **autonomously built in public**
-- coordinated by claws/lobsters rather than human pair-programming alone
-- operated through a chat interface
-- continuously improved by structured planning/execution/review loops
-- maintained as a showcase of the coordination layer, not just the output files
+`claudeCode.sandbox.enable = true` in a profile means that profile's derivation is always sandboxed, for everyone, everywhere it runs. Escape hatches exist but must be declared explicitly.
 
-The code is evidence.
-The coordination system is the product lesson.
+## Profiles Are the Unit of Sharing
+
+Teams publish profiles as flake outputs. Projects import and override. The org's standard backend profile — its tools, prompt conventions, MCP servers — travels with the flake, pinned by the lock file.
+
+```bash
+nix run .#rust           # Rust dev session
+nix run .#review         # Locked review session
+nix run github:myorg/yuki#rust   # Pinned remote session
+```
 
 ## What Still Matters
 
@@ -94,21 +88,24 @@ What still matters:
 - human trust
 - operational stability
 - judgment about what to build next
+- **hermetic reproducibility**
 
 In that world, the job of the human is not to out-type the machine.
 The job of the human is to decide what deserves to exist.
 
+## Design Values
+
+1. **Reproducibility over convenience** — if it can't be pinned, it shouldn't be in the harness
+2. **Explicit over implicit** — what Claude can do is declared, not inferred
+3. **Composition over inheritance** — profiles merge, they don't override each other by magic
+4. **Build-time over runtime** — if it can be resolved before Claude starts, it should be
+5. **Hermetic by default** — the open network and the writable filesystem are opt-in
+
 ## Short Version
 
-**Claw Code is a demo of autonomous software development.**
+**Yuki is a demo of autonomous software development with hermetic Nix foundations.**
 
 Humans provide direction.
-Claws coordinate, build, test, recover, and push.
+Yuki coordinates, builds, tests, recovers, and pushes.
 The repository is the artifact.
-The philosophy is the system behind it.
-
-## Related explanation
-
-For the longer public explanation behind this philosophy, see:
-
-- https://x.com/realsigridjin/status/2039472968624185713
+The philosophy is the system behind it — declarative, reproducible, composable.

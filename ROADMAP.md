@@ -1,8 +1,8 @@
-# Clawable Coding Harness Roadmap
+# Yuki Roadmap
 
 ## Goal
 
-Turn claw-code into the most **clawable** coding harness:
+Turn Yuki into the most **autonomous** coding harness:
 - no human-first terminal assumptions
 - no fragile prompt injection timing
 - no opaque session state
@@ -3867,7 +3867,7 @@ ear], /color [scheme], /effort [low|medium|high], /fast, /summary, /tag [label],
 
      # Test: -p with actual credentials — the SWALLOWING is visible:
      $ ANTHROPIC_AUTH_TOKEN=sk-bogus claw -p "hello" --model sonnet
-     7[1G[2K[38;5;12m⠋ 🦀 Thinking...[0m8[1G[2K[38;5;9m✘ ❌ Request failed
+     7[1G[2K[38;5;12m⠋ ❄️ Thinking...[0m8[1G[2K[38;5;9m✘ ❌ Request failed
      error: api returned 401 Unauthorized (authentication_error)
      # The 401 comes back AFTER the request went out. The --model sonnet was
      # swallowed into the prompt "hello --model sonnet", the binary's default
@@ -5568,7 +5568,7 @@ $ claw plugins list
 error: missing Anthropic credentials; ...
 
 $ ANTHROPIC_API_KEY=dummy claw plugins
-⠋ 🦀 Thinking...
+⠋ ❄️ Thinking...
 ✘ ❌ Request failed
 error: api returned 401 Unauthorized (authentication_error)
 ```

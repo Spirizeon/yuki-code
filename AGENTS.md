@@ -1,4 +1,4 @@
-# AGENTS.md — Claude Harness
+# AGENTS.md — Yuki Harness
 
 Specialized agents for building, validating, and composing harness configurations.
 

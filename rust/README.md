@@ -1,4 +1,4 @@
-# 🦞 Claw Code — Rust Implementation
+# ❄️ Yuki — Rust Implementation
 
 A high-performance Rust rewrite of the Claw Code CLI agent harness. Built for speed, safety, and native tool execution.
 
@@ -88,7 +88,7 @@ Primary artifacts:
 | Todo tracking | ✅ |
 | Notebook editing | ✅ |
 | CLAUDE.md / project memory | ✅ |
-| Config file hierarchy (`.claw.json` + merged config sections) | ✅ |
+| Config file hierarchy (`.yuki.json` + merged config sections) | ✅ |
 | Permission system | ✅ |
 | MCP server lifecycle + inspection | ✅ |
 | Session persistence + resume | ✅ |
@@ -118,7 +118,7 @@ Short names resolve to the latest model versions:
 Representative current surface:
 
 ```text
-claw [OPTIONS] [COMMAND]
+yuki [OPTIONS] [COMMAND]
 
 Flags:
   --model MODEL
@@ -145,7 +145,7 @@ Top-level commands:
   init
 ```
 
-`claw acp` is a local discoverability surface for editor-first users: it reports the current ACP/Zed status without starting the runtime. As of April 16, 2026, claw-code does **not** ship an ACP/Zed daemon entrypoint yet, and `claw acp serve` is only a status alias until the real protocol surface lands.
+`yuki acp` is a local discoverability surface for editor-first users: it reports the current ACP/Zed status without starting the runtime. As of April 16, 2026, yuki-code does **not** ship an ACP/Zed daemon entrypoint yet, and `yuki acp serve` is only a status alias until the real protocol surface lands.
 
 The command surface is moving quickly. For the canonical live help text, run:
 
@@ -165,7 +165,7 @@ The REPL now exposes a much broader surface than the original minimal shell:
 - automation / analysis: `/review`, `/advisor`, `/insights`, `/security-review`, `/subagent`, `/team`, `/telemetry`, `/providers`, `/cron`, and more
 - plugin management: `/plugin` (with aliases `/plugins`, `/marketplace`)
 
-Notable claw-first surfaces now available directly in slash form:
+Notable yuki-first surfaces now available directly in slash form:
 - `/skills [list|install <path>|help]`
 - `/agents [list|help]`
 - `/mcp [list|show <server>|help]`
@@ -188,7 +188,7 @@ rust/
     ├── mock-anthropic-service/ # Deterministic local Anthropic-compatible mock
     ├── plugins/            # Plugin metadata, manager, install/enable/disable surfaces
     ├── runtime/            # Session, config, permissions, MCP, prompts, auth/runtime loop
-    ├── rusty-claude-cli/   # Main CLI binary (`claw`)
+    ├── rusty-claude-cli/   # Main CLI binary (`yuki`)
     ├── telemetry/          # Session tracing and usage telemetry types
     └── tools/              # Built-in tools, skill resolution, tool search, agent runtime surfaces
 ```
@@ -209,7 +209,7 @@ rust/
 
 - **~20K lines** of Rust
 - **9 crates** in workspace
-- **Binary name:** `claw`
+- **Binary name:** `yuki`
 - **Default model:** `claude-opus-4-6`
 - **Default permissions:** `danger-full-access`
 

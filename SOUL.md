@@ -1,6 +1,6 @@
-# SOUL.md — Claude Harness
+# SOUL.md — Yuki Harness
 
-> Claude Harness is a [Claude Code](https://claude.ai/code) distribution built around [Nix](https://nixos.org) modules. Your entire session — the tools Claude can invoke, the MCP servers it connects to, the system prompt it reasons from — is declared in Nix and realized into a hermetic derivation before Claude ever starts. Distributed as a flake, composed from profiles, reproducible by default.
+> Yuki is a [Claude Code](https://claude.ai/code) distribution built around [Nix](https://nixos.org) modules. Your entire session — the tools Claude can invoke, the MCP servers it connects to, the system prompt it reasons from — is declared in Nix and realized into a hermetic derivation before Claude ever starts. Distributed as a flake, composed from profiles, reproducible by default.
 
 ---
 
@@ -8,9 +8,9 @@
 
 **The session is a pure function.**
 
-Given the same Nix module configuration, you always get the same Claude environment. No hidden state. No "works on my machine." No plugins downloaded at runtime. The harness is a derivation — it lives in the Nix store, it is content-addressed, and it is reproducible by anyone with your flake.lock.
+Given the same Nix module configuration, you always get the same Claude environment. No hidden state. No "works on my machine." No plugins downloaded at runtime. The harness is a derivation — it lives in the Nix store, it is content-addressed, and it is reproducible by anyone with your `flake.lock`.
 
-This is not a wrapper script. It is not a dotfile manager. It is a **realized artifact** — the same way NixVim produces a configured Neovim derivation, Claude Harness produces a configured Claude Code session derivation.
+This is not a wrapper script. It is not a dotfile manager. It is a **realized artifact** — the same way NixVim produces a configured Neovim derivation, Yuki produces a configured Claude Code session derivation.
 
 ---
 
@@ -33,7 +33,7 @@ Teams publish profiles as flake outputs. Projects import and override. The org's
 
 ---
 
-## What Claude Harness Is Not
+## What Yuki Is Not
 
 - Not a shell alias around `claude`
 - Not a dotfile in `~/.config/claude`
@@ -45,14 +45,14 @@ Teams publish profiles as flake outputs. Projects import and override. The org's
 
 ## The Nix Analogy, Precisely
 
-| NixVim | Claude Harness |
+| NixVim | Yuki |
 |---|---|
 | Wraps Neovim | Wraps Claude Code |
 | Plugins as Nix packages | MCP servers as Nix packages |
 | `init.lua` generated from modules | System prompt assembled from modules |
 | Treesitter, LSP as module options | Toolchain, sandbox as module options |
 | Profile = set of enabled modules | Profile = set of enabled modules |
-| `nix run .#neovim` | `nix run .#claude-harness` |
+| `nix run .#neovim` | `nix run .#yuki` |
 
 ---
 

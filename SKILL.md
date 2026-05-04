@@ -1,7 +1,7 @@
 ---
-name: claude-harness
+name: yuki
 description: >
-  Build, compose, and extend Claude Harness — a Nix-module-based Claude Code
+  Build, compose, and extend Yuki — a Nix-module-based Claude Code
   environment system. Use this skill whenever the user wants to: create a new
   harness profile, define module options for tools/MCP servers/sandboxing/system
   prompts, wire up a flake.nix entry point, compose profiles together, debug
@@ -11,7 +11,7 @@ description: >
   Claude's toolchain and context in Nix.
 ---
 
-# Claude Harness Skill
+# Yuki Skill
 
 A skill for building and composing Claude Code environments as Nix module derivations.
 
@@ -22,14 +22,14 @@ A skill for building and composing Claude Code environments as Nix module deriva
 The harness is a **pure function from Nix options to a Claude Code derivation**.
 
 ```
-modules (profiles) → evalModules → config → mkHarness → /nix/store/…-claude-harness
+modules (profiles) → evalModules → config → mkYuki → /nix/store/…-yuki
 ```
 
 Three layers:
 
 1. **Module layer** — declares options (`claudeCode.tools.allowed`, `claudeCode.mcp.servers`, etc.)
 2. **Profile layer** — sets options for a specific use case (`rust-dev`, `locked-review`, `default`)
-3. **Derivation layer** — `mkHarness` calls `evalModules`, assembles the toolchain env, generates `CLAUDE.md` and `mcp.json`, and wraps everything in a `writeShellApplication`
+3. **Derivation layer** — `mkYuki` calls `evalModules`, assembles the toolchain env, generates `CLAUDE.md` and `mcp.json`, and wraps everything in a `writeShellApplication`
 
 ---
 
@@ -128,7 +128,7 @@ let
   cfg = eval.config.claudeCode;
 
   toolchainEnv = nixpkgs.buildEnv {
-    name = "claude-toolchain";
+    name = "yuki-toolchain";
     paths = cfg.toolchain.packages;
   };
 
@@ -136,7 +136,7 @@ let
   mcpConfig = nixpkgs.writeText "mcp.json"   (builtins.toJSON { mcpServers = cfg.mcp.servers; });
 
 in nixpkgs.writeShellApplication {
-  name = "claude-harness";
+  name = "yuki";
   runtimeInputs = cfg.toolchain.packages ++ [ nixpkgs.claude-code ];
   text = ''
     export PATH="${toolchainEnv}/bin:$PATH"
@@ -162,16 +162,16 @@ in nixpkgs.writeShellApplication {
 
   outputs = { self, nixpkgs }:
   let
-    mkHarness = import ./lib/mkHarness.nix { inherit nixpkgs; };
+    mkYuki = import ./lib/mkHarness.nix { inherit nixpkgs; };
   in {
     packages.x86_64-linux = {
-      default = mkHarness { modules = [ ./profiles/default.nix ]; };
-      rust    = mkHarness { modules = [ ./profiles/rust-dev.nix ]; };
-      review  = mkHarness { modules = [ ./profiles/locked-review.nix ]; };
+      default = mkYuki { modules = [ ./profiles/default.nix ]; };
+      rust    = mkYuki { modules = [ ./profiles/rust-dev.nix ]; };
+      review  = mkYuki { modules = [ ./profiles/locked-review.nix ]; };
     };
 
     # Re-exported for downstream projects to call
-    lib.mkHarness = mkHarness;
+    lib.mkYuki = mkYuki;
   };
 }
 ```
@@ -180,7 +180,7 @@ Usage:
 ```bash
 nix run .#rust                            # Rust dev session
 nix run .#review                          # Locked review session
-nix run github:myorg/claude-harness#rust  # Pinned remote session
+nix run github:myorg/yuki#rust  # Pinned remote session
 ```
 
 ---
@@ -190,14 +190,14 @@ nix run github:myorg/claude-harness#rust  # Pinned remote session
 A project's own `flake.nix` imports the org harness and overrides only what differs:
 
 ```nix
-inputs.claude-harness.url = "github:myorg/claude-harness";
+inputs.yuki.url = "github:myorg/yuki";
 
-outputs = { self, nixpkgs, claude-harness }:
+outputs = { self, nixpkgs, yuki }:
 {
-  packages.x86_64-linux.claude =
-    claude-harness.lib.mkHarness {
+  packages.x86_64-linux.default =
+    yuki.lib.mkYuki {
       modules = [
-        claude-harness.profiles.rust          # inherit org standard
+        yuki.profiles.rust          # inherit org standard
         {
           # project-specific overrides
           claudeCode.systemPrompt = lib.mkAfter ''
