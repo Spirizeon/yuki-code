@@ -57,14 +57,16 @@ export CLAUDE_SANDBOX="${sandboxEnabled}"
 export CLAUDE_SANDBOX_WRITABLE="${sandboxWritable}"
 export CLAUDE_SANDBOX_NETWORK="${sandboxNetwork}"
 
-# Check for claude CLI
-if ! command -v claude &> /dev/null; then
+# Find claude CLI - first check if in PATH
+if command -v claude &> /dev/null; then
+  CLAUDE_CMD="claude"
+else
   echo "Error: claude CLI not found in PATH" >&2
-  echo "Install Claude Code or add it to the toolchain in your profile" >&2
+  echo "Install Claude Code from https://claude.ai/code" >&2
   exit 1
 fi
 
-exec claude \
+exec "$CLAUDE_CMD" \
   --model ${cfg.model} \
   --system-prompt-file $out/CLAUDE.md \
   --mcp-config $out/mcp.json \
