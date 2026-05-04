@@ -3,6 +3,8 @@
 <p align="center">
   <a href="https://github.com/spirizeon/yuki">spirizeon/yuki</a>
   ·
+  <a href="https://github.com/ultraworkers/claw-code">ultraworkers/claw-code</a> (base)
+  ·
   <a href="./SOUL.md">Philosophy</a>
   ·
   <a href="./SKILL.md">Skill</a>
@@ -148,3 +150,7 @@ claudeCode = {
 - [clawhip](https://github.com/Yeachan-Heo/clawhip) — Event routing
 - [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) — Multi-agent coordination
 - [UltraWorkers Discord](https://discord.gg/5TUQKqFWd)
+
+## Acknowledgments
+
+Yuki is built on the foundation of [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code), the original Rust implementation of the Claude CLI agent harness. This project carries forward its vision of autonomous software development with declarative, hermetic Nix-based environments.
