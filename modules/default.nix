@@ -59,6 +59,12 @@ in
       example = { RUST_BACKTRACE = "1"; CARGO_REGISTRIES_CRATES_IO_PROTOCOL = "sparse"; };
     };
 
+    envFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Path to .env file to source for credentials";
+    };
+
     systemPrompt = lib.mkOption {
       type = lib.types.lines;
       default = "";

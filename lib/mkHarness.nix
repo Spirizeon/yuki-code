@@ -16,6 +16,7 @@ let
   toolsAllowedStr = builtins.concatStringsSep "," cfg.tools.allowed;
   modelStr = cfg.model;
   shellPath = pkgs.stdenv.shell;
+  envFileVal = if cfg.envFile != null then toString cfg.envFile else "";
 
 in
 
@@ -24,6 +25,14 @@ pkgs.writeScriptBin "yuki" (
   "set -e\n" +
   "export PATH=\"${toolchainEnv}/bin:$PATH\"\n" +
   "export CLAUDE_TOOLS=\"${toolsAllowedStr}\"\n" +
+  
+  "# Load .env file if configured\n" +
+  "if [ -n \"${envFileVal}\" ] && [ -f \"${envFileVal}\" ]; then\n" +
+  "  set -a\n" +
+  "  source \"${envFileVal}\"\n" +
+  "  set +a\n" +
+  "fi\n" +
+  
   "CLAUDE_BIN=\n" +
   "for p in /home/berzi/Documents/yuki/rust/target/release/claw ./rust/target/release/claw /run/current-system/sw/bin/claude; do\n" +
   "  if [ -x \"$p\" ]; then CLAUDE_BIN=\"$p\"; fi\n" +
