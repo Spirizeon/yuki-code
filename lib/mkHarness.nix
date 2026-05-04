@@ -13,12 +13,18 @@ let
     paths = cfg.toolchain.packages;
   };
 
-  claudeMd = pkgs.writeText "CLAUDE.md" cfg.systemPrompt;
+  claudeMd = pkgs.writeTextFile {
+    name = "CLAUDE.md";
+    text = cfg.systemPrompt;
+  };
 
   mcpConfigJson = builtins.toJSON {
     mcpServers = cfg.mcp.servers;
   };
-  mcpConfig = pkgs.writeText "mcp.json" mcpConfigJson;
+  mcpConfig = pkgs.writeTextFile {
+    name = "mcp.json";
+    text = mcpConfigJson;
+  };
 
   sandboxWritable = 
     if cfg.sandbox.writablePaths != [] 
@@ -30,43 +36,41 @@ let
   sandboxEnabled = if cfg.sandbox.enable then "true" else "false";
   sandboxNetwork = if cfg.sandbox.allowNetwork then "true" else "false";
 
-  wrapper = pkgs.writeText "yuki-wrapper.sh" ''
-    #!${pkgs.stdenv.shell}
-    set -e
-
-    export PATH="${toolchainEnv}/bin:$PATH"
-    export CLAUDE_MODEL="${cfg.model}"
-    export CLAUDE_TOOLS="${toolsAllowed}"
-    export CLAUDE_TOOLS_DENIED="${toolsDenied}"
-    export CLAUDE_SANDBOX="${sandboxEnabled}"
-    export CLAUDE_SANDBOX_WRITABLE="${sandboxWritable}"
-    export CLAUDE_SANDBOX_NETWORK="${sandboxNetwork}"
-
-    exec claude \
-      --model "$CLAUDE_MODEL" \
-      --system-prompt-file ${claudeMd} \
-      --mcp-config ${mcpConfig} \
-      --sandbox "$CLAUDE_SANDBOX" \
-      "$@"
-  '';
-
 in
 
-pkgs.stdenv.mkDerivation {
-  name = "yuki";
-  pname = "yuki";
-  version = "0.1.0";
+pkgs.runCommand "yuki" {
+  inherit toolchainEnv claudeMd mcpConfig;
+  buildInputs = [ pkgs.bash ];
+} (''
+  mkdir -p $out/bin
+  cp "$claudeMd" $out/CLAUDE.md
+  cp "$mcpConfig" $out/mcp.json
 
-  builder = pkgs.stdenv.shell;
+  cat > $out/bin/yuki <<'SCRIPT'
+#!${pkgs.stdenv.shell}
+set -e
 
-  args = [
-    "-c"
-    ''
-      mkdir -p $out/bin
-      cp ${wrapper} $out/bin/yuki
-      chmod +x $out/bin/yuki
-    ''
-  ];
+export PATH="${toolchainEnv}/bin:$PATH"
+export CLAUDE_TOOLS="${toolsAllowed}"
+export CLAUDE_TOOLS_DENIED="${toolsDenied}"
+export CLAUDE_SANDBOX="${sandboxEnabled}"
+export CLAUDE_SANDBOX_WRITABLE="${sandboxWritable}"
+export CLAUDE_SANDBOX_NETWORK="${sandboxNetwork}"
 
-  shell = pkgs.stdenv.shell;
-}
+# Check for claude CLI
+if ! command -v claude &> /dev/null; then
+  echo "Error: claude CLI not found in PATH" >&2
+  echo "Install Claude Code or add it to the toolchain in your profile" >&2
+  exit 1
+fi
+
+exec claude \
+  --model ${cfg.model} \
+  --system-prompt-file $out/CLAUDE.md \
+  --mcp-config $out/mcp.json \
+  --sandbox $CLAUDE_SANDBOX \
+  "$@"
+SCRIPT
+
+  chmod +x $out/bin/yuki
+'')
