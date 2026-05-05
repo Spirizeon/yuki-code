@@ -21,16 +21,6 @@ const sidebars = {
     },
     {
       type: 'category',
-      label: 'Reference',
-      items: [
-        'parity',
-        'philosophy',
-        'roadmap',
-        'agents',
-      ],
-    },
-    {
-      type: 'category',
       label: 'Meta',
       items: [
         'changelog',

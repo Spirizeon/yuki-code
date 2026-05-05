@@ -1,6 +1,3 @@
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
-
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Yuki',
@@ -8,8 +5,6 @@ const config = {
   url: 'https://yuki-code.pages.dev',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
   organizationName: 'Spirizeon',
   projectName: 'yuki-code',
 
@@ -33,13 +28,8 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: 'img/yuki-social-card.png',
       navbar: {
         title: 'Yuki',
-        logo: {
-          alt: 'Yuki Logo',
-          src: 'img/logo.svg',
-        },
         items: [
           {
             type: 'doc',
@@ -63,10 +53,6 @@ const config = {
       footer: {
         style: 'dark',
         copyright: `Copyright ${new Date().getFullYear()} Spirizeon. Built with Docusaurus.`,
-      },
-      prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
       },
     }),
 };

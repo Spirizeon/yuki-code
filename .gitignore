@@ -10,3 +10,7 @@ archive/
 .claw/sessions/
 .clawhip/
 status-help.txt
+# Docusaurus
+docs/node_modules/
+docs/.docusaurus/
+docs/build/

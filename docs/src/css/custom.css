@@ -1,0 +1,79 @@
+/* Custom CSS for Yuki documentation */
+
+:root {
+  --ifm-color-primary: #4da6ff;
+  --ifm-color-primary-dark: #3399ff;
+  --ifm-color-primary-darker: #1a8fff;
+  --ifm-color-primary-darkest: #007acc;
+  --ifm-color-primary-light: #80bfff;
+  --ifm-color-primary-lighter: #99ccff;
+  --ifm-color-primary-lightest: #cce6ff;
+  --ifm-code-font-size: 95%;
+  --ifm-navbar-height: 60px;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #80bfff;
+  --ifm-color-primary-dark: #4da6ff;
+  --ifm-color-primary-darker: #3399ff;
+  --ifm-color-primary-darkest: #1a8fff;
+  --ifm-color-primary-light: #b3d9ff;
+  --ifm-color-primary-lighter: #cce6ff;
+  --ifm-color-primary-lightest: #e6f3ff;
+}
+
+.navbar {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.navbar__title {
+  font-weight: 600;
+}
+
+.hero {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.hero__title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.hero__subtitle {
+  font-size: 1.25rem;
+  color: var(--ifm-color-content-secondary);
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+}
+
+.button--primary {
+  background: var(--ifm-color-primary);
+}
+
+.button--primary:hover {
+  background: var(--ifm-color-primary-dark);
+}
+
+.admonition {
+  margin: 1rem 0;
+}
+
+.menu {
+  font-size: 0.9rem;
+}
+
+.menu__link {
+  padding: 0.5rem 1rem;
+}
+
+article {
+  max-width: 800px;
+  margin: 0 auto;
+}
