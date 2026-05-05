@@ -13,12 +13,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository shape
 - `rust/` contains the Rust workspace and active CLI/runtime implementation.
-- `src/` contains source files that should stay consistent with generated guidance and tests.
-- `tests/` contains validation surfaces that should be reviewed alongside code changes.
 - `flake.nix` defines Yuki harness outputs.
 - `lib/` contains Nix harness builder (`mkHarness.nix`).
 - `modules/` contains Nix module definitions.
 - `profiles/` contains harness profile compositions.
+- `docs/` contains documentation (Docusaurus format) and markdown source.
+- `DEV.md` contains contributor guide.
 
 ## Working agreement
 - Prefer small, reviewable changes and keep generated bootstrap files aligned with actual repo workflows.
