@@ -133,5 +133,5 @@ claudeCode.sandbox = {
 
 ## See Also
 
-- [Tutorial: Getting Started](../tutorial/tutorial-getting-started.md)
+- [Tutorial: Getting Started](../tutorial/getting-started)
 - [How-to: Team Setup](../howto/howto-team-setup.md)
