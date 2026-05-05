@@ -213,9 +213,10 @@ nix run .#review      # Locked review session
 
 | Document | Purpose |
 |----------|---------|
-| [SOUL.md](./SOUL.md) | Core philosophy and design values |
-| [SKILL.md](./SKILL.md) | Module system and profile authoring |
-| [USAGE.md](./USAGE.md) | CLI reference and examples |
+| [SOUL.md](./docs/md/SOUL.md) | Core philosophy and design values |
+| [SKILL.md](./docs/md/SKILL.md) | Module system and profile authoring |
+| [USAGE.md](./docs/md/USAGE.md) | CLI reference and examples |
+| [DEV.md](./DEV.md) | Development guide for contributors |
 
 ## Development
 
@@ -228,6 +229,8 @@ cd rust
 cargo build --release
 cd ..
 ./result/bin/yuki --version
+
+# See DEV.md for full contributor guide
 ```
 
 ## Ecosystem
