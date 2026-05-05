@@ -38,5 +38,24 @@
           exePath = "/bin/yuki";
         };
       };
+
+      devShells.x86_64-linux.default = pkgs.mkShell {
+        packages = with pkgs; [
+          rustc
+          cargo
+          rustfmt
+          clippy
+          rust-analyzer
+          nil
+          nixfmt-rfc-style
+        ];
+
+        shellHook = ''
+          echo "❄️ Yuki dev shell"
+          echo "  cd rust      - work on Rust codebase"
+          echo "  nix develop  - this shell"
+          echo ""
+        '';
+      };
     };
 }

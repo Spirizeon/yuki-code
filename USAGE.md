@@ -11,12 +11,12 @@ Run this before prompts, sessions, or automation:
 ```bash
 cd rust
 cargo build --workspace
-./target/debug/yuki
+./target/release/yuki
 # first command inside the REPL
 /doctor
 ```
 
-`/doctor` is the built-in setup and preflight diagnostic. Once you have a saved session, you can rerun it with `./target/debug/yuki --resume latest /doctor`.
+`/doctor` is the built-in setup and preflight diagnostic. Once you have a saved session, you can rerun it with `./target/release/yuki --resume latest /doctor`.
 
 ## Prerequisites
 
@@ -28,12 +28,32 @@ cargo build --workspace
 
 ## Install / build the workspace
 
+### Option 1: Using Nix (Recommended)
+
 ```bash
+nix develop
 cd rust
-cargo build --workspace
+cargo build --release
 ```
 
-The CLI binary is available at `rust/target/debug/yuki` after a debug build. Make the doctor check above your first post-build step.
+### Option 2: Using shell.nix
+
+```bash
+nix-shell shell.nix
+cd rust
+cargo build --release
+```
+
+### Option 3: Using system Rust
+
+```bash
+cd rust
+cargo build --release
+```
+
+The CLI binary is available at `rust/target/release/yuki`.
+
+The CLI binary is available at `rust/target/release/yuki`. Make the doctor check above your first post-build step.
 
 ## Quick start
 
@@ -41,7 +61,7 @@ The CLI binary is available at `rust/target/debug/yuki` after a debug build. Mak
 
 ```bash
 cd rust
-./target/debug/yuki
+./target/release/yuki
 /doctor
 ```
 
@@ -49,7 +69,7 @@ Or run doctor directly with JSON output for scripting:
 
 ```bash
 cd rust
-./target/debug/yuki doctor --output-format json
+./target/release/yuki doctor --output-format json
 ```
 
 **Note:** Diagnostic verbs (`doctor`, `status`, `sandbox`, `version`) support `--output-format json` for machine-readable output. Invalid suffix arguments (e.g., `--json`) are now rejected at parse time rather than falling through to prompt dispatch.
@@ -60,14 +80,14 @@ Set up a new repository with `.yuki` config, `.yuki.json`, `.gitignore` entries,
 
 ```bash
 cd /path/to/your/repo
-./target/debug/yuki init
+./target/release/yuki init
 ```
 
 Text mode (human-readable) shows artifact creation summary with project path and next steps. Idempotent — running multiple times in the same repo marks already-created files as "skipped".
 
 JSON mode for scripting:
 ```bash
-./target/debug/yuki init --output-format json
+./target/release/yuki init --output-format json
 ```
 
 Returns structured output with `project_path`, `created[]`, `updated[]`, `skipped[]` arrays (one per artifact), and `artifacts[]` carrying each file's `name` and machine-stable `status` tag. The legacy `message` field preserves backward compatibility.
@@ -78,28 +98,28 @@ Returns structured output with `project_path`, `created[]`, `updated[]`, `skippe
 
 ```bash
 cd rust
-./target/debug/yuki
+./target/release/yuki
 ```
 
 ### One-shot prompt
 
 ```bash
 cd rust
-./target/debug/yuki prompt "summarize this repository"
+./target/release/yuki prompt "summarize this repository"
 ```
 
 ### Shorthand prompt mode
 
 ```bash
 cd rust
-./target/debug/yuki "explain rust/crates/runtime/src/lib.rs"
+./target/release/yuki "explain rust/crates/runtime/src/lib.rs"
 ```
 
 ### JSON output for scripting
 
 ```bash
 cd rust
-./target/debug/yuki --output-format json prompt "status"
+./target/release/yuki --output-format json prompt "status"
 ```
 
 ### Inspect worker state
@@ -110,12 +130,12 @@ Prerequisite: You must run `yuki` (interactive REPL) or `yuki prompt <text>` at 
 
 ```bash
 cd rust
-./target/debug/yuki state
+./target/release/yuki state
 ```
 
 JSON mode:
 ```bash
-./target/debug/yuki state --output-format json
+./target/release/yuki state --output-format json
 ```
 
 If you run `yuki state` before any worker has executed, you will see a helpful error:
@@ -185,10 +205,10 @@ Output: A list of suspicious patterns with explanations (e.g., "unchecked unwrap
 
 ```bash
 cd rust
-./target/debug/yuki --model sonnet prompt "review this diff"
-./target/debug/yuki --permission-mode read-only prompt "summarize Cargo.toml"
-./target/debug/yuki --permission-mode workspace-write prompt "update README.md"
-./target/debug/yuki --allowedTools read,glob "inspect the runtime crate"
+./target/release/yuki --model sonnet prompt "review this diff"
+./target/release/yuki --permission-mode read-only prompt "summarize Cargo.toml"
+./target/release/yuki --permission-mode workspace-write prompt "update README.md"
+./target/release/yuki --allowedTools read,glob "inspect the runtime crate"
 ```
 
 Supported permission modes:
@@ -243,7 +263,7 @@ export ANTHROPIC_BASE_URL="http://127.0.0.1:8080"
 export ANTHROPIC_AUTH_TOKEN="local-dev-token"
 
 cd rust
-./target/debug/yuki --model "claude-sonnet-4-6" prompt "reply with the word ready"
+./target/release/yuki --model "claude-sonnet-4-6" prompt "reply with the word ready"
 ```
 
 ### OpenAI-compatible endpoint
@@ -253,7 +273,7 @@ export OPENAI_BASE_URL="http://127.0.0.1:8000/v1"
 export OPENAI_API_KEY="local-dev-token"
 
 cd rust
-./target/debug/yuki --model "qwen2.5-coder" prompt "reply with the word ready"
+./target/release/yuki --model "qwen2.5-coder" prompt "reply with the word ready"
 ```
 
 ### Ollama
@@ -263,7 +283,7 @@ export OPENAI_BASE_URL="http://127.0.0.1:11434/v1"
 unset OPENAI_API_KEY
 
 cd rust
-./target/debug/yuki --model "llama3.2" prompt "summarize this repository in one sentence"
+./target/release/yuki --model "llama3.2" prompt "summarize this repository in one sentence"
 ```
 
 ### OpenRouter
@@ -273,7 +293,7 @@ export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 export OPENAI_API_KEY="sk-or-v1-..."
 
 cd rust
-./target/debug/yuki --model "openai/gpt-4.1-mini" prompt "summarize this repository in one sentence"
+./target/release/yuki --model "openai/gpt-4.1-mini" prompt "summarize this repository in one sentence"
 ```
 
 ### Alibaba DashScope (Qwen)
@@ -284,9 +304,9 @@ For Qwen models via Alibaba's native DashScope API (higher rate limits than Open
 export DASHSCOPE_API_KEY="sk-..."
 
 cd rust
-./target/debug/yuki --model "qwen/qwen-max" prompt "hello"
+./target/release/yuki --model "qwen/qwen-max" prompt "hello"
 # or bare:
-./target/debug/yuki --model "qwen-plus" prompt "hello"
+./target/release/yuki --model "qwen-plus" prompt "hello"
 ```
 
 Model names starting with `qwen/` or `qwen-` are automatically routed to the DashScope compatible-mode endpoint (`https://dashscope.aliyuncs.com/compatible-mode/v1`). You do **not** need to set `OPENAI_BASE_URL` or unset `ANTHROPIC_API_KEY` — the model prefix wins over the ambient credential sniffer.
@@ -372,7 +392,7 @@ export HTTP_PROXY="http://proxy.corp.example:3128"
 export NO_PROXY="localhost,127.0.0.1,.corp.example"
 
 cd rust
-./target/debug/yuki prompt "hello via the corporate proxy"
+./target/release/yuki prompt "hello via the corporate proxy"
 ```
 
 ### Programmatic `proxy_url` config option
@@ -407,12 +427,12 @@ let client = build_http_client_with(&config).expect("proxy client");
 
 ```bash
 cd rust
-./target/debug/yuki status
-./target/debug/yuki sandbox
-./target/debug/yuki agents
-./target/debug/yuki mcp
-./target/debug/yuki skills
-./target/debug/yuki system-prompt --cwd .. --date 2026-04-04
+./target/release/yuki status
+./target/release/yuki sandbox
+./target/release/yuki agents
+./target/release/yuki mcp
+./target/release/yuki skills
+./target/release/yuki system-prompt --cwd .. --date 2026-04-04
 ```
 
 ## Session management
@@ -421,8 +441,8 @@ REPL turns are persisted under `.yuki/sessions/` in the current workspace.
 
 ```bash
 cd rust
-./target/debug/yuki --resume latest
-./target/debug/yuki --resume latest /status /diff
+./target/release/yuki --resume latest
+./target/release/yuki --resume latest /status /diff
 ```
 
 Useful interactive commands include `/help`, `/status`, `/cost`, `/config`, `/session`, `/model`, `/permissions`, and `/export`.

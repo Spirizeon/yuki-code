@@ -1,156 +1,256 @@
-# ❄️ Yuki
+# Yuki - Reproducible Agent Sessions for AI Engineering Teams
 
 <p align="center">
-  <a href="https://github.com/spirizeon/yuki">spirizeon/yuki</a>
-  ·
-  <a href="https://github.com/ultraworkers/claw-code">ultraworkers/claw-code</a> (base)
-  ·
-  <a href="./SOUL.md">Philosophy</a>
-  ·
-  <a href="./SKILL.md">Skill</a>
-  ·
-  <a href="./USAGE.md">Usage</a>
-  ·
-  <a href="https://discord.gg/5TUQKqFWd">Discord</a>
+  <a href="https://github.com/spirizeon/yuki/stargazers">
+    <img src="https://img.shields.io/github/stars/spirizeon/yuki?style=flat" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/spirizeon/yuki/releases/latest">
+    <img src="https://img.shields.io/github/v/release/spirizeon/yuki" alt="GitHub release">
+  </a>
+  <a href="https://github.com/spirizeon/yuki/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/spirizeon/yuki" alt="License MIT">
+  </a>
+  <a href="https://github.com/spirizeon/yuki/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/spirizeon/yuki/build.yml" alt="CI">
+  </a>
+  <a href="https://nixos.org">
+    <img src="https://img.shields.io/badge/Powered%20by-Nix-blue" alt="Nix">
+  </a>
 </p>
 
-<p align="center">
-  <pre>
- .     .--. 
-.-.          .-        .'|     |__| 
- \ \        / /      .'  |     .--. 
-  \ \      / /      <    |     |  | 
-   \ \    / /_    _  |   | ____|  | 
-    \ \  / /| '  / | |   | \ .'|  | 
-     \ `  /.' | .' | |   |/  . |  | 
-      \  / /  | /  | |    /\  \|__| 
-      / / |   `'.  | |   |  \  \    
-  |`-' /  '   .'|  '/'    \  \  \   
-   '..'    `-'  `--''------'  '---'
-  </pre>
-</p>
+## The Problem: "Works on My Machine" for AI Agents
 
-## The Session Is a Pure Function
+Modern AI coding agents like Claude Code are powerful, but their deployment suffers from a fundamental reproducibility crisis:
 
-Yuki is a **declarative**, **hermetic** Claude Code harness built on Nix. Your entire session — the tools Claude can invoke, the MCP servers it connects to, the system prompt it reasons from — is declared in Nix profiles and realized into a reproducible derivation **before Claude ever starts**.
+| Source of Irreproducibility | What Goes Wrong |
+|-----------------------------|------------------|
+| **Tool versions** | Developer has Rust 1.80, CI has 1.75 - different clippy warnings |
+| **System prompts** | One developer edited CLAUDE.md, another did not - different behavior |
+| **MCP servers** | Server downloads deps at runtime - inconsistent across machines |
+| **Environment variables** | Machine-specific exports - secrets leaked or missing |
+| **Tool permissions** | Set interactively, not declared - audit nightmare |
+
+Teams fall back to informal conventions (make sure you have Rust installed), but there is no mechanism analogous to a lock file for the agent operating environment.
+
+## The Yuki Solution: Agent Sessions as Build Artifacts
+
+Yuki treats the agent session as a pure function from Nix module configuration to content-addressed derivation:
 
 ```
-profiles → evalModules → mkHarness → /nix/store/…-yuki
+profiles -> evalModules -> mkHarness -> /nix/store/...-yuki
 ```
 
-**This is not a wrapper script.** It's a realized artifact — the same way NixVim produces a configured Neovim derivation, Yuki produces a configured Claude Code session derivation.
+Everything the agent needs is resolved at build time, before the agent ever starts:
 
-## Why Nix?
+- **Model selection** - pinned to specific model version
+- **Tool permissions** - explicit allowlist/denylist
+- **Toolchain** - hermetic PATH from Nix packages
+- **Environment variables** - declared, not assumed
+- **System prompt** - composable from modules
+- **MCP servers** - resolved to Nix store paths
+- **Sandbox policy** - network/filesystem restrictions
 
-| Without Nix | With Yuki |
-|------------|----------|
-| "works on my machine" | Same environment everywhere |
-| Runtime plugin downloads | Build-time resolve |
-| Implicit toolchain | Explicit packages in PATH |
-| Mutable dotfiles | Declarative profiles |
-| Unreproducible sessions | Content-addressed derivation |
+### Why This Matters for AI Engineering Teams
 
-## Quick Start
+| Team Challenge | Yuki Answer |
+|---------------|-------------|
+| Works on my machine | Same derivation everywhere |
+| CI vs local divergence | Identical Nix store path |
+| Audit requirements | Content-addressed store path encodes full config |
+| Onboarding new engineers | nix run .#backend gets exact same setup |
+| Regulatory compliance | Cryptographic proof of what the agent could do |
 
-```bash
-# Clone and enter the flake
-git clone https://github.com/spirizeon/yuki
-cd yuki
+## Key Distinguishing Features
 
-# Build a harness profile
-nix build .#default
-# or
-nix build .#rust
-# or  
-nix build .#review
+### 1. Declarative, Not Imperative
 
-# Run the hermetic session
-./result/bin/yuki
-```
-
-```bash
-# Interactive from anywhere (after adding to PATH)
-nix run github:spirizeon/yuki#rust
-```
-
-## Three Ways to Use Yuki
-
-### 1. Flake Outputs (Recommended)
-
-```bash
-nix run .#default      # Base tools + REPL
-nix run .#rust        # + Rust toolchain
-nix run .#review      # Read-only, sandboxed
-```
-
-### 2. Nix Module Composition
-
-Import profiles and compose your own:
+You do not tell Yuki what to do at runtime. You declare what the session is:
 
 ```nix
-# my-project/flake.nix
+claudeCode = {
+  model = "claude-sonnet-4-6";
+  tools.allowed = [ "bash" "read" "write" "edit" "grep" "glob" ];
+  toolchain.packages = [ pkgs.rustc pkgs.clippy pkgs.cargo ];
+  sandbox.enable = true;
+  sandbox.allowNetwork = false;
+};
+```
+
+The harness realizes this declaration into a binary before Claude starts.
+
+### 2. Hermetic by Default
+
+The sandbox is a module option, not a runtime flag:
+
+```nix
+claudeCode.sandbox = {
+  enable = true;              # always on for this profile
+  allowNetwork = false;       # opt-in, not opt-out
+  writablePaths = [ "/tmp" ]; # explicit scope
+};
+```
+
+When sandbox.enable = true, that profile derivation is always sandboxed for everyone, everywhere it runs.
+
+### 3. Profile Composition
+
+Profiles are Nix modules that compose deterministically:
+
+```nix
+# Compose multiple profiles - they merge, do not conflict
+imports = [
+  ./profiles/rust-dev.nix
+  ./profiles/security-review.nix
+];
+```
+
+The Nix module system merge semantics ensure:
+- List options (toolchain packages) concatenate
+- String options (system prompt) append via lib.mkAfter
+- Boolean options follow defined merge strategy
+
+### 4. Content-Addressed Audit Trail
+
+The Nix store path encodes all inputs:
+
+```
+/nix/store/3kx5k7s2...-yuki
+```
+
+Given this path, you can reconstruct:
+- Exact tool versions
+- System prompt contents
+- MCP server binaries
+- Sandbox configuration
+
+This is a cryptographic proof of what the agent was capable of doing - critical for compliance and audit.
+
+## For AI Engineering Teams: Three Real-World Use Cases
+
+### Use Case 1: Team Standardization
+
+Publish a shared profile as a flake output:
+
+```nix
+# your-org/flake.nix
 {
-  inputs.yuki.url = "github:spirizeon/yuki";
-  
-  outputs = { self, yuki, ... }:
-  {
-    packages.default = yuki.lib.mkHarness {
+  inputs.yuki.url = "github:your-org/yuki-config";
+
+  outputs = { self, yuki }: {
+    packages.backend = yuki.lib.mkHarness {
       modules = [
-        yuki.profiles.rust
-        {
-          claudeCode.systemPrompt = lib.mkAfter ''
-            This project uses diesel for database access.
-          '';
-        }
+        yuki.profiles.default
+        yourorg.backend-tools
+        yourorg.security-policy
       ];
     };
   };
 }
 ```
 
-### 3. Local Development
+Every developer runs:
+```bash
+nix run .#backend  # identical on every machine
+```
+
+### Use Case 2: CI/CD Reproducibility
+
+```yaml
+# .github/workflows/ai-review.yml
+steps:
+  - uses: actions/checkout@v4
+  - run: nix run .#review --prompt "Review PR ${{ github.event.pull_request.number }}"
+```
+
+The review agent receives:
+- Same model as local development
+- Same tool permissions (read-only)
+- Same system prompt (team conventions)
+- Same sandbox (no network, no writes)
+
+No more "it worked locally but failed in CI" mysteries.
+
+### Use Case 3: Compliance and Audit
+
+For regulated environments, Yuki provides:
+
+1. **Capability audit** - The store path proves what the agent could do
+2. **Config reproducibility** - Same inputs -> same outputs, always
+3. **No runtime drift** - Nothing downloaded after session starts
 
 ```bash
-cd rust
-cargo build --workspace
-./target/debug/yuki
+# Audit trail: what did this agent have access to?
+ls -la /nix/store/ | grep yuki
+# -> /nix/store/xwl2sh0ajmfiv02n7jfdak4s6n8x89rj-yuki
+
+# Reconstruct full config from that path
+# Yuki stores all config in the derivation
 ```
 
-## What Yuki Declares
+## Quick Start
 
-```nix
-claudeCode = {
-  model         # "claude-sonnet-4-6" — model to use
-  tools.allowed # ["bash" "read" "write" ...] — permitted tools
-  toolchain.packages = [ pkgs.rustc pkgs.clippy ];  # hermetic PATH
-  environment = { RUST_BACKTRACE = "1"; };        # env vars
-  systemPrompt = lib.mkAfter '' ... '';               # composable prompt
-  mcp.servers = { };                              # MCP configurations
-  sandbox = { enable = true; allowNetwork = false; };  # isolation
-};
+```bash
+# Clone and build
+git clone https://github.com/spirizeon/yuki
+cd yuki
+nix build .#default
+
+# Run the hermetic session
+./result/bin/yuki
 ```
 
-## Design Values
+### Ready-Made Profiles
 
-1. **Reproducibility over convenience** — if it can't be pinned, it shouldn't be in the harness
-2. **Explicit over implicit** — what Claude can do is declared, not inferred
-3. **Composition over inheritance** — profiles merge, they don't override each other by magic
-4. **Build-time over runtime** — if it can be resolved before Claude starts, it should be
-5. **Hermetic by default** — the open network and the writable filesystem are opt-in
+| Profile | Use Case |
+|---------|----------|
+| default | Base tools + REPL |
+| rust | Rust development with toolchain |
+| review | Read-only, sandboxed code review |
+
+```bash
+nix run .#rust        # Rust dev session
+nix run .#review      # Locked review session
+```
 
 ## Documentation
 
-- [SOUL.md](./SOUL.md) — Core philosophy (read this first)
-- [SKILL.md](./SKILL.md) — Module system and profile authoring
-- [USAGE.md](./USAGE.md) — CLI reference and usage
-- [rust/README.md](./rust/README.md) — Rust implementation details
+| Document | Purpose |
+|----------|---------|
+| [SOUL.md](./SOUL.md) | Core philosophy and design values |
+| [SKILL.md](./SKILL.md) | Module system and profile authoring |
+| [USAGE.md](./USAGE.md) | CLI reference and examples |
+
+## Development
+
+```bash
+# Enter dev environment
+nix develop
+
+# Build
+cd rust
+cargo build --release
+cd ..
+./result/bin/yuki --version
+```
 
 ## Ecosystem
 
-- [clawhip](https://github.com/Yeachan-Heo/clawhip) — Event routing
-- [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) — Multi-agent coordination
-- [UltraWorkers Discord](https://discord.gg/5TUQKqFWd)
+- [clawhip](https://github.com/Yeachan-Heo/clawhip) - Event routing
+- [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) - Multi-agent coordination
+
+## Citation
+
+If you use Yuki in research or want to cite the approach:
+
+```bibtex
+@article{yuki2025,
+  title={Yuki: A Declarative, Hermetic Harness for Reproducible AI Coding Agent Environments},
+  author={Spirizeon},
+  journal={Workshop on Reproducible AI Development (RAID 25)},
+  year={2025}
+}
+```
 
 ## Acknowledgments
 
-Yuki is built on the foundation of [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code), the original Rust implementation of the Claude CLI agent harness. This project carries forward its vision of autonomous software development with declarative, hermetic Nix-based environments.
+Yuki is built on [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code), the Rust implementation of the Claude CLI agent harness. The core insight of treating agent sessions as build artifacts is inspired by [NixVim](https://github.com/nix-community/nixvim), which applies the same philosophy to Neovim.
