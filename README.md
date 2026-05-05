@@ -4,7 +4,6 @@ Hey everyone! So you've probably been there - you set up Claude Code on your mac
 
 That's exactly what Yuki solves.
 
----
 
 ## Index
 
@@ -16,23 +15,21 @@ That's exactly what Yuki solves.
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 
----
 
 ## What is Yuki?
 
-Yuki is a declarative harness for Claude Code that treats agent sessions as **build artifacts**. 
+Yuki is a declarative harness for Claude Code that treats agent sessions as build artifacts. 
 
 In plain English: you define what your AI agent should have (tools, permissions, environment, MCP servers) in Nix configuration files, and Yuki builds a reproducible environment from those definitions.
 
 The key insight? Your agent session becomes a pure function:
 
 ```
-Your Config → nix build → /nix/store/...yuki → Claude Code
+Your Config -> nix build -> /nix/store/...yuki -> Claude Code
 ```
 
-Everything is resolved at build time—before the agent even starts.
+Everything is resolved at build time - before the agent even starts.
 
----
 
 ## The Core Problem
 
@@ -40,15 +37,14 @@ Here's what goes wrong without Yuki:
 
 | Problem | What Happens |
 |---------|-------------|
-| Tool versions | Dev has Rust 1.80, CI has 1.75 → different clippy warnings |
-| System prompts | One dev edited CLAUDE.md, another didn't → different behavior |
-| MCP servers | Downloads deps at runtime → inconsistent across machines |
-| Environment variables | Machine-specific exports → secrets leaked or missing |
-| Tool permissions | Set interactively, not declared → audit nightmare |
+| Tool versions | Dev has Rust 1.80, CI has 1.75 - different clippy warnings |
+| System prompts | One dev edited CLAUDE.md, another did not - different behavior |
+| MCP servers | Downloads deps at runtime - inconsistent across machines |
+| Environment variables | Machine-specific exports - secrets leaked or missing |
+| Tool permissions | Set interactively, not declared - audit nightmare |
 
-There's no "lock file" for your agent's operating environment—until now.
+There's no "lock file" for your agent operating environment - until now.
 
----
 
 ## How It Works
 
@@ -58,16 +54,15 @@ The magic is in the Nix store path:
 /nix/store/xwl2sh0ajmfiv02n7jfdak4s6n8x89rj-yuki
 ```
 
-That hash encodes **everything**:
+That hash encodes everything:
 - Exact tool versions
 - System prompt contents  
 - MCP server binaries
 - Sandbox configuration
 - Environment variables
 
-Change anything in your config? The hash changes. That's your audit trail.
+Change anything in your config? The hash changes. That is your audit trail.
 
----
 
 ## Quick Start
 
@@ -81,17 +76,16 @@ nix build .#default
 ./result/bin/yuki
 ```
 
-That's it! Three commands and you have a reproducible agent session.
+That is it! Three commands and you have a reproducible agent session.
 
 ### Ready-Made Profiles
 
 | Command | Use Case |
 |---------|----------|
-| `nix run .#default` | Base tools + REPL |
-| `nix run .#rust` | Rust development |
-| `nix run .#review` | Read-only, sandboxed code review |
+| nix run .#default | Base tools + REPL |
+| nix run .#rust | Rust development |
+| nix run .#review | Read-only, sandboxed code review |
 
----
 
 ## Three Real-World Use Cases
 
@@ -115,7 +109,7 @@ Same profile in CI as local:
 
 No more "it worked locally but failed in CI" mysteries.
 
-### 3. Compliance & Audit
+### 3. Compliance and Audit
 
 The Nix store path is your proof:
 
@@ -124,28 +118,26 @@ ls /nix/store/ | grep yuki
 # -> /nix/store/xwl2sh0ajmfiv02n7jfdak4s6n8x89rj-yuki
 ```
 
-That path proves exactly what the agent could do—critical for regulated environments.
+That path proves exactly what the agent could do - critical for regulated environments.
 
----
 
 ## Documentation
 
-For the full deep-dive, check out the docs at **[yuki.berzi.one](https://yuki.berzi.one)**:
+For the full deep-dive, check out the docs at yuki.berzi.one:
 
-| Section | What's Covered |
+| Section | What is Covered |
 |---------|----------------|
-| **Tutorials** | Getting started, your first session |
-| **How-to Guides** | Create profiles, team setup, CI/CD, MCP servers |
-| **Reference** | CLI commands, module options |
-| **Explanation** | Core philosophy and design decisions |
+| Tutorials | Getting started, your first session |
+| How-to Guides | Create profiles, team setup, CI/CD, MCP servers |
+| Reference | CLI commands, module options |
+| Explanation | Core philosophy and design decisions |
 
-The docs are written in the Diátaxis framework—clear distinction between tutorials (learning), how-to guides (doing), reference (looking up), and explanation (understanding).
+The docs are written in the Diataxis framework - clear distinction between tutorials (learning), how-to guides (doing), reference (looking up), and explanation (understanding).
 
----
 
 ## Contributing
 
-Want to contribute? Here's how:
+Want to contribute? Here is how:
 
 ```bash
 # Enter dev environment
@@ -159,16 +151,14 @@ cargo build --release
 cargo test --release
 ```
 
-Check out the full contributor guide at **[yuki.berzi.one](https://yuki.berzi.one)** for details.
+Check out the full contributor guide at yuki.berzi.one for details.
 
----
 
 ## Built On
 
-Yuki builds on [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code)—the Rust implementation of the Claude CLI. The core insight comes from NixOS: treating configuration as code, with reproducible builds as a first-class property.
+Yuki builds on ultraworkers/claw-code - the Rust implementation of the Claude CLI. The core insight comes from NixOS: treating configuration as code, with reproducible builds as a first-class property.
 
----
 
-**Bottom line:** If your team uses AI coding agents and you've ever uttered "it works on my machine," Yuki is for you.
+Bottom line: If your team uses AI coding agents and you have ever uttered "it works on my machine," Yuki is for you.
 
-Check out the docs at **[yuki.berzi.one](https://yuki.berzi.one)** to get started!
+Check out the docs at yuki.berzi.one to get started!
