@@ -1,29 +1,47 @@
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
-  sidebar: [
+  tutorial: [
     {
       type: 'category',
-      label: 'Getting Started',
+      label: 'Tutorials',
       collapsed: false,
       items: [
-        'intro',
-        'quick-start',
+        'tutorial/getting-started',
+        'tutorial/first-session',
       ],
     },
+  ],
+
+  howto: [
     {
       type: 'category',
-      label: 'Core Concepts',
+      label: 'How-to Guides',
       items: [
-        'soul',
-        'skill',
-        'usage',
+        'howto/howto-create-profile',
+        'howto/howto-team-setup',
+        'howto/howto-cicd',
+        'howto/howto-mcp-servers',
       ],
     },
+  ],
+
+  reference: [
     {
       type: 'category',
-      label: 'Meta',
+      label: 'Reference',
       items: [
-        'changelog',
+        'reference/reference-cli',
+        'reference/reference-options',
+      ],
+    },
+  ],
+
+  explanation: [
+    {
+      type: 'category',
+      label: 'Explanation',
+      items: [
+        'explanation/explanation-philosophy',
       ],
     },
   ],

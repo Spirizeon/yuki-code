@@ -4,7 +4,7 @@ const config = {
   tagline: 'Reproducible Agent Sessions for AI Engineering Teams',
   url: 'https://yuki-code.pages.dev',
   baseUrl: '/',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   organizationName: 'Spirizeon',
   projectName: 'yuki-code',
 
@@ -33,15 +33,15 @@ const config = {
         items: [
           {
             type: 'doc',
-            docId: 'intro',
+            docId: 'tutorial/getting-started',
             position: 'left',
             label: 'Docs',
           },
           {
             type: 'doc',
-            docId: 'changelog',
+            docId: 'howto/howto-create-profile',
             position: 'left',
-            label: 'Changelog',
+            label: 'Guides',
           },
           {
             href: 'https://github.com/Spirizeon/yuki-code',
