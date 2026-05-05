@@ -14,3 +14,4 @@ status-help.txt
 docs/node_modules/
 docs/.docusaurus/
 docs/build/
+docs/package-lock.json
