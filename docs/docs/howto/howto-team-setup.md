@@ -25,7 +25,7 @@ Create a shared profile in your organization's repository:
 { lib, pkgs, ... }:
 
 {
-  # Fixed model version
+  # Fixed model version - same for everyone
   claudeCode.model = "sonnet";
 
   # Standard tools for your stack
@@ -39,12 +39,13 @@ Create a shared profile in your organization's repository:
     "websearch"
   ];
 
-  # Team conventions
+  # Team conventions via environment
   claudeCode.environment = {
     RUST_BACKTRACE = "1";
     EDITOR = "vim";
   };
 
+  # Team-specific instructions via system prompt
   claudeCode.systemPrompt = lib.mkAfter ''
     Follow team conventions:
     - Use conventional commits
@@ -54,6 +55,14 @@ Create a shared profile in your organization's repository:
 }
 ```
 
+**Why this works:**
+- Every team member uses the **same model** (no "I had better results with opus")
+- Everyone has the **same tools** (no "I don't have that tool installed")
+- Environment variables are **declared** (no machine-specific exports)
+- System prompt is **version-controlled** (no drift over time)
+
+> **NOTE**: The key benefit is that `flake.lock` pins all dependencies. When someone runs `nix build`, they get the exact same environment as everyone else.
+
 ## Step 2: Publish as a Flake
 
 Create a flake that exports your team configuration:
@@ -62,7 +71,9 @@ Create a flake that exports your team configuration:
 # flake.nix
 {
   inputs = {
+    # Pin nixpkgs to a specific version
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Import Yuki as a dependency
     yuki.url = "github:Spirizeon/yuki-code";
   };
 
@@ -72,7 +83,7 @@ Create a flake that exports your team configuration:
   in
   {
     packages.x86_64-linux = {
-      # Team profile combining Yuki + org-specific
+      # Team profile - combine Yuki base + org-specific config
       default = yuki.lib.mkHarness [
         yuki.profiles.default
         ./profiles/team-standard.nix
@@ -82,6 +93,13 @@ Create a flake that exports your team configuration:
   };
 }
 ```
+
+**Explanation of inputs:**
+- `inputs` declares dependencies with versions (from lock file)
+- `nixpkgs.url` - The Nix packages repository (pinned in flake.lock)
+- `yuki.url` - Your Yuki dependency (pinned version)
+
+> **NOTE**: The `flake.lock` file is crucial - it records exactly which versions everything resolved to. Commit this file to ensure reproducibility.
 
 ## Step 3: Share with Team
 
@@ -99,30 +117,47 @@ nix build .#default
 ./result/bin/yuki
 ```
 
+**What happens:**
+1. Nix reads `flake.lock` to get exact versions
+2. Builds the profile (fetches/patches packages)
+3. Produces a derivation in `/nix/store/...`
+4. Creates `./result/bin/yuki` pointing to it
+
+> **NOTE**: The first build may take time (downloading packages), but subsequent builds are instant due to Nix's caching.
+
 ## Step 4: Version Control the Profile
 
 Treat your profile like code:
 
 ```bash
-# Pin to a specific Yuki version
+# Clone and enter directory
 git clone https://github.com/your-org/ai-config
 cd ai-config
 
-# Lock file pins all dependencies
+# The lock file pins all dependencies - this is your guarantee
 cat flake.lock  # Shows pinned nixpkgs, yuki, etc.
 
-# Update periodically
+# Update periodically (review changes in git diff)
 git pull        # Gets latest locked versions
 ```
 
+**The lock file guarantees:**
+- Same `nixpkgs` revision
+- Same Yuki version
+- Same any other inputs
+
+> **NOTE**: The `flake.lock` is auto-generated. Don't edit it manually - run `nix flake update` to update dependencies.
+
 ## Team Workflow Example
 
-| Action | Command |
-|--------|---------|
-| First time setup | `git clone && nix develop` |
-| Daily use | `nix run .#default` |
-| Update config | `git pull` |
-| Test changes | `nix build .#default && ./result/bin/yuki` |
+| Action | Command | What Happens |
+|--------|---------|--------------|
+| First time setup | `git clone && nix develop` | Enters dev shell with all tools |
+| Daily use | `nix run .#default` | Builds and runs profile |
+| Update config | `git pull` | Gets latest locked versions |
+| Test changes | `nix build .#default && ./result/bin/yuki` | Verifies profile works |
+
+> **NOTE**: `nix develop` enters a shell with packages from `devShells` - useful for working on the flake itself.
 
 ## Enforcing Consistency
 
