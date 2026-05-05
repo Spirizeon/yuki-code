@@ -159,4 +159,3 @@ echo "Test prompt" | ./result/bin/yuki "echo 'hello'"
 | Understand design | Read [Core Philosophy](./soul.md) |
 | Create custom profiles | Read [Module System](./skill.md) |
 | CLI details | Read [CLI Reference](./usage.md) |
-| Contribute | Read [Development Guide](../DEV.md) |

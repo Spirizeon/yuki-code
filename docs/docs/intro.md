@@ -132,4 +132,3 @@ ls /nix/store/ | grep yuki
 - [Core Philosophy](./soul.md) - Design values and principles
 - [Module System](./skill.md) - Creating custom profiles
 - [CLI Reference](./usage.md) - Complete CLI documentation
-- [Development Guide](../DEV.md) - Contributor guide
