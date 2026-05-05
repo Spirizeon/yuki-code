@@ -1,17 +1,14 @@
 # Yuki - Reproducible Agent Sessions for AI Engineering Teams
 
 <p align="center">
-  <a href="https://github.com/spirizeon/yuki/stargazers">
-    <img src="https://img.shields.io/github/stars/spirizeon/yuki?style=flat" alt="GitHub stars">
+  <a href="https://github.com/Spirizeon/yuki-code/stargazers">
+    <img src="https://img.shields.io/github/stars/Spirizeon/yuki-code?style=flat" alt="GitHub stars">
   </a>
-  <a href="https://github.com/spirizeon/yuki/releases/latest">
-    <img src="https://img.shields.io/github/v/release/spirizeon/yuki" alt="GitHub release">
+  <a href="https://github.com/Spirizeon/yuki-code/releases/latest">
+    <img src="https://img.shields.io/github/v/release/Spirizeon/yuki-code" alt="GitHub release">
   </a>
-  <a href="https://github.com/spirizeon/yuki/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/spirizeon/yuki" alt="License MIT">
-  </a>
-  <a href="https://github.com/spirizeon/yuki/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/spirizeon/yuki/build.yml" alt="CI">
+  <a href="https://github.com/Spirizeon/yuki-code/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Spirizeon/yuki-code" alt="License MIT">
   </a>
   <a href="https://nixos.org">
     <img src="https://img.shields.io/badge/Powered%20by-Nix-blue" alt="Nix">
