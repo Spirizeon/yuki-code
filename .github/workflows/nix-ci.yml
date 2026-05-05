@@ -1,0 +1,93 @@
+name: Nix CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.nix'
+      - 'profiles/**'
+      - 'modules/**'
+      - 'lib/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'shell.nix'
+      - '.github/workflows/nix-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.nix'
+      - 'profiles/**'
+      - 'modules/**'
+      - 'lib/**'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'shell.nix'
+      - '.github/workflows/nix-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: nix-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-profiles:
+    name: Build Nix profiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            flakes = true
+            nix-path = nixpkgs=github:NixOS/nixpkgs/nixos-unstable
+      - name: Build default profile
+        run: nix build .#default --print-build-logs
+      - name: Build rust profile
+        run: nix build .#rust --print-build-logs
+      - name: Build review profile
+        run: nix build .#review --print-build-logs
+
+  dev-shell:
+    name: Dev shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            flakes = true
+            nix-path = nixpkgs=github:NixOS/nixpkgs/nixos-unstable
+      - name: Test nix develop
+        run: nix develop --command echo "Dev shell works"
+
+  shell-nix:
+    name: shell.nix fallback
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+      - name: Test shell.nix
+        run: nix-shell shell.nix --command echo "shell.nix works"
+
+  test-yuki-binary:
+    name: Test yuki binary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            flakes = true
+            nix-path = nixpkgs=github:NixOS/nixpkgs/nixos-unstable
+      - name: Build Rust binary
+        run: |
+          cd rust
+          cargo build --release
+      - name: Build default profile
+        run: nix build .#default --print-build-logs
+      - name: Test yuki --version
+        run: ./result/bin/yuki --version
+      - name: Test yuki --help
+        run: ./result/bin/yuki --help | head -5
