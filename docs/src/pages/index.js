@@ -14,10 +14,10 @@ export default function Home() {
         <p className={styles.tagline}>{siteConfig.tagline}</p>
         
         <div className={styles.actions}>
-          <Link className="button button--primary button--lg" to="/docs/tutorial/getting-started">
+          <Link className="button button--primary button--lg" to="/tutorial/getting-started">
             Get Started
           </Link>
-          <Link className="button button--secondary button--lg" to="/docs/howto/howto-create-profile">
+          <Link className="button button--secondary button--lg" to="/howto/howto-create-profile">
             Create a Profile
           </Link>
         </div>
