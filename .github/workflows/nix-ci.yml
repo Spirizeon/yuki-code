@@ -68,8 +68,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            flakes = false
       - name: Test shell.nix
-        run: nix-shell shell.nix --command echo "shell.nix works"
+        run: nix-shell shell.nix --option restrict-network true --command echo "shell.nix loads"
 
   test-yuki-binary:
     name: Test yuki binary
