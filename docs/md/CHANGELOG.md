@@ -44,4 +44,4 @@ All notable changes to Yuki will be documented in this file.
 ### Credits
 
 - Built on [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code)
-- Inspired by [NixVim](https://github.com/nix-community/nixvim)
+- Inspired by NixOS principles for reproducible system configuration

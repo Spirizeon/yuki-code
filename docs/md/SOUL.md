@@ -88,14 +88,13 @@ nix run github:myorg/yuki#rust   # Pinned remote session
 
 ## The Nix Analogy, Precisely
 
-| NixVim | Yuki |
-|--------|-----|
-| Wraps Neovim | Wraps Claude Code |
-| Plugins as Nix packages | MCP servers as Nix packages |
-| `init.lua` generated from modules | System prompt assembled from modules |
-| Treesitter, LSP as module options | Toolchain, sandbox as module options |
-| Profile = set of enabled modules | Profile = set of enabled modules |
-| `nix run .#neovim` | `nix run .#yuki` |
+| NixOS | Yuki |
+|-------|------|
+| System packages as Nix packages | Toolchain as Nix packages |
+| `/etc/nixos` configures the system | Profiles configure the agent |
+| Declarative system state | Declarative agent environment |
+| Content-addressed store paths | Content-addressed derivations |
+| `nix run .#mySystem` | `nix run .#myProfile` |
 
 ---
 

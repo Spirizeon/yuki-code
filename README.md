@@ -253,4 +253,4 @@ If you use Yuki in research or want to cite the approach:
 
 ## Acknowledgments
 
-Yuki is built on [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code), the Rust implementation of the Claude CLI agent harness. The core insight of treating agent sessions as build artifacts is inspired by [NixVim](https://github.com/nix-community/nixvim), which applies the same philosophy to Neovim.
+Yuki is built on [ultraworkers/claw-code](https://github.com/ultraworkers/claw-code), the Rust implementation of the Claude CLI agent harness. The core insight is treating agent sessions as build artifacts, following the same principles that make NixOS systems reproducible.
