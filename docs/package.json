@@ -6,7 +6,8 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
-    "deploy": "docusaurus deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev"
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
@@ -17,7 +18,8 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.7.0"
+    "@docusaurus/module-type-aliases": "^3.7.0",
+    "wrangler": "^4.88.0"
   },
   "browserslist": {
     "production": [
